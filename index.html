@@ -12,58 +12,58 @@
 <script src="https://accounts.google.com/gsi/client" async></script>
 <style>
   :root {
-    --bg: #eaece9;
-    --surface: #fbfbfa;
-    --surface-2: #f2f3f1;
-    --ink: #16222b;
-    --muted: #5f6c76;
-    --faint: #8b96a0;
-    --line: #dce0e0;
-    --line-strong: #c6cccc;
-    --accent: #1c6b54;
-    --accent-soft: #e2ede8;
-    --advance: #916d16;
-    --advance-soft: #f0e8d3;
-    --danger: #a83f2c;
-    --danger-soft: #f3e0da;
-    --shadow: 0 1px 2px rgba(22,34,43,.06), 0 8px 24px rgba(22,34,43,.07);
+    --bg: #e9e6dd;
+    --surface: #fcfbf6;
+    --surface-2: #f1efe6;
+    --ink: #1f2530;
+    --muted: #676f6a;
+    --faint: #9a9c8f;
+    --line: #ddd8ca;
+    --line-strong: #c8c2b1;
+    --accent: #0e6b60;
+    --accent-soft: #d9ebe6;
+    --advance: #a8792c;
+    --advance-soft: #f0e7d0;
+    --danger: #9d3b30;
+    --danger-soft: #f2ddd6;
+    --shadow: 0 1px 2px rgba(31,37,48,.05), 0 8px 24px rgba(31,37,48,.08);
     --radius: 14px;
     --radius-sm: 9px;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0e151a;
-      --surface: #161f26;
-      --surface-2: #1c272f;
-      --ink: #e7edf0;
-      --muted: #94a1ab;
-      --faint: #6f7d87;
-      --line: #26313a;
-      --line-strong: #33404a;
-      --accent: #4dbf9a;
-      --accent-soft: #163029;
-      --advance: #d7b45e;
+      --bg: #12151b;
+      --surface: #191d25;
+      --surface-2: #212734;
+      --ink: #e9ece6;
+      --muted: #9aa39a;
+      --faint: #6f776f;
+      --line: #29303a;
+      --line-strong: #39424e;
+      --accent: #4cc2b2;
+      --accent-soft: #143029;
+      --advance: #d8b26a;
       --advance-soft: #2c2716;
-      --danger: #e08268;
-      --danger-soft: #331e18;
+      --danger: #e0836e;
+      --danger-soft: #331d18;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #0e151a;
-    --surface: #161f26;
-    --surface-2: #1c272f;
-    --ink: #e7edf0;
-    --muted: #94a1ab;
-    --faint: #6f7d87;
-    --line: #26313a;
-    --line-strong: #33404a;
-    --accent: #4dbf9a;
-    --accent-soft: #163029;
-    --advance: #d7b45e;
+    --bg: #12151b;
+    --surface: #191d25;
+    --surface-2: #212734;
+    --ink: #e9ece6;
+    --muted: #9aa39a;
+    --faint: #6f776f;
+    --line: #29303a;
+    --line-strong: #39424e;
+    --accent: #4cc2b2;
+    --accent-soft: #143029;
+    --advance: #d8b26a;
     --advance-soft: #2c2716;
-    --danger: #e08268;
-    --danger-soft: #331e18;
+    --danger: #e0836e;
+    --danger-soft: #331d18;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
   }
 
@@ -322,10 +322,57 @@
   .range-arrow { font-size: 13px; color: var(--muted); font-weight: 500; }
   .rangebtns { display: flex; gap: 8px; margin-top: 8px; }
   .rangebtns .btn { flex: 1; justify-content: center; }
+  .filterbar { display: flex; gap: 8px; margin-top: 8px; align-items: center; }
+  .filter-select {
+    flex: 1; min-width: 0; font: inherit; font-size: 13.5px; font-weight: 500; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 9px 26px 9px 11px; outline: none; -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23676f6a' stroke-width='2.4'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 9px center;
+  }
+  .filter-select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .filterbar .linkish { flex-shrink: 0; }
   .export-hint { font-size: 12.5px; color: var(--muted); margin-top: 16px; text-align: center; }
   .export-hint b { color: var(--accent); font-weight: 600; }
-  .voucher-btn { width: 100%; margin-top: 8px; }
+  .voucher-btn { width: 100%; margin-top: 10px; }
   .voucher-btn:disabled { opacity: .45; }
+  .voucher-btn.alt { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+  .voucher-btn.alt:disabled { color: var(--muted); border-color: var(--line); }
+
+  /* ---------- Voucher preview modal ---------- */
+  .preview-modal {
+    position: fixed; inset: 0; z-index: 65; background: var(--bg);
+    display: none; flex-direction: column;
+  }
+  .preview-modal.open { display: flex; }
+  .preview-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: calc(env(safe-area-inset-top) + 10px) 14px 10px; border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .preview-title { font-size: 15px; font-weight: 700; }
+  .preview-actions { display: flex; align-items: center; gap: 8px; }
+  .btn.sm { padding: 7px 12px; font-size: 13px; }
+  .preview-scroll { flex: 1; overflow: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
+  .preview-page {
+    max-width: 720px; margin: 0 auto; background: #ffffff; color: #111;
+    padding: 34px 30px; border-radius: 6px; box-shadow: 0 2px 16px rgba(0,0,0,.14);
+    font-family: "Times New Roman", Georgia, serif; font-size: 13px; line-height: 1.35;
+  }
+  .preview-page .v-head { font-size: 11px; margin-bottom: 14px; }
+  .preview-page .v-name { font-weight: 700; font-size: 14px; }
+  .preview-page .v-title { text-align: center; font-weight: 700; text-decoration: underline; margin: 12px 0; font-size: 14px; }
+  .preview-page table.v-tbl { width: 100%; border-collapse: collapse; }
+  .preview-page table.v-tbl th, .preview-page table.v-tbl td { border: 1px solid #333; padding: 4px 5px; vertical-align: top; }
+  .preview-page table.v-tbl th { text-align: center; font-size: 10.5px; text-transform: uppercase; }
+  .preview-page td.c { text-align: center; }
+  .preview-page .hl { background: #fff59a; }
+  .preview-page .v-foot { margin-top: 14px; }
+  .preview-page .v-two { display: flex; justify-content: space-between; margin-top: 2px; }
+  .preview-page .v-sig { height: 64px; margin: 6px 0; }
+  .preview-page .v-shots { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+  .preview-page .v-shots img { width: 46%; border: 1px solid #ccc; border-radius: 3px; }
+  .preview-empty { text-align: center; color: var(--muted); padding: 40px 20px; }
   .day-total { font-size: 12px; color: var(--accent); font-weight: 600; }
   .data-row { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 0 2px; }
   .data-note { font-size: 12px; color: var(--faint); margin-right: auto; display: inline-flex; align-items: center; gap: 5px; }
@@ -343,6 +390,7 @@
   .chips button.sel { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
   .chips button:active { transform: scale(.97); }
   .chips button.add { color: var(--accent); border-style: dashed; }
+  .chips button.del { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
   .add-cat { display: flex; gap: 6px; width: 100%; }
   .add-cat input {
     flex: 1; font: inherit; font-size: 14px; color: var(--ink);
@@ -469,12 +517,17 @@
       <span class="range-arrow">to</span>
       <input type="date" id="viewTo" class="mono" aria-label="To date">
     </div>
-    <div class="rangebtns">
-      <button class="btn" id="viewRange">View expenses</button>
-      <button class="btn ghost" id="viewAll">Show all</button>
+    <div class="filterbar">
+      <select id="filterPaid" class="filter-select" aria-label="Filter by who paid"></select>
+      <select id="filterClient" class="filter-select" aria-label="Filter by client"></select>
+      <button class="linkish" id="filterReset">Reset</button>
     </div>
-    <div class="export-hint" id="exportHint">Exports below cover: <b>all expenses</b></div>
-    <button class="btn-primary voucher-btn" id="exportDocx" disabled>
+    <button class="btn-primary voucher-btn" id="previewBtn" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      Preview voucher
+    </button>
+    <div class="export-hint" id="exportHint">Covering: <b>all expenses</b></div>
+    <button class="btn-primary voucher-btn alt" id="exportDocx" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M13 3v6h6"/></svg>
       Word voucher (firm format)
     </button>
@@ -589,6 +642,20 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
     <img id="lightboxImg" alt="Payment screenshot">
+  </div>
+
+  <div class="preview-modal" id="previewModal">
+    <div class="preview-head">
+      <span class="preview-title">Voucher preview</span>
+      <div class="preview-actions">
+        <button class="btn ghost sm" id="pvWord">Word</button>
+        <button class="btn ghost sm" id="pvPdf">PDF</button>
+        <button class="icon-btn" id="pvClose" aria-label="Close preview">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="preview-scroll"><div class="preview-page" id="pvPage"></div></div>
   </div>
 
   <div class="toast" id="toast"></div>
@@ -900,7 +967,8 @@
   var fPaidBy = $("fPaidBy");
   var descChips = $("descChips"), paidChips = $("paidChips");
   var viewFromEl = $("viewFrom"), viewToEl = $("viewTo");
-  var viewRange = { from: "", to: "", active: false };
+  var filterPaidEl = $("filterPaid"), filterClientEl = $("filterClient");
+  var flt = { paid: "all", client: "all" };
 
   /* ---------- currency menu ---------- */
   function buildCurMenu() {
@@ -956,21 +1024,35 @@
   buildChips(paidChips, PAID_BY, fPaidBy);
 
   /* ---------- expenditure quick-picks (double as categories) ---------- */
+  var catManage = false;
   function renderDescChips() {
     var html = state.cats.map(function (c) {
+      if (catManage) return '<button type="button" class="del" data-del="' + esc(c) + '">' + esc(c) + ' ✕</button>';
       return '<button type="button" data-val="' + esc(c) + '">' + esc(c) + '</button>';
     }).join("");
-    html += '<button type="button" class="add" data-add="1">＋ New</button>';
+    if (catManage) {
+      html += '<button type="button" class="add" data-done="1">Done</button>';
+    } else {
+      html += '<button type="button" class="add" data-add="1">＋ New</button>';
+      if (state.cats.length) html += '<button type="button" class="add" data-edit="1">Edit</button>';
+    }
     descChips.innerHTML = html;
     descChips.querySelectorAll("button").forEach(function (b) {
       b.addEventListener("click", function () {
         if (b.getAttribute("data-add")) { showAddCat(); return; }
+        if (b.getAttribute("data-edit")) { catManage = true; renderDescChips(); return; }
+        if (b.getAttribute("data-done")) { catManage = false; renderDescChips(); return; }
+        if (b.hasAttribute("data-del")) {
+          var val = b.getAttribute("data-del");
+          state.cats = state.cats.filter(function (c) { return c !== val; });
+          saveCats(); renderDescChips(); return;
+        }
         fDesc.value = b.getAttribute("data-val");
         fDesc.classList.remove("err");
         highlightDescChips();
       });
     });
-    highlightDescChips();
+    if (!catManage) highlightDescChips();
   }
   function highlightDescChips() {
     var v = fDesc.value.trim().toLowerCase();
@@ -1002,12 +1084,19 @@
   fDesc.addEventListener("input", highlightDescChips);
 
   /* ---------- render ---------- */
-  function inRange(e) {
-    if (!viewRange.active) return true;
-    if (viewRange.from && (e.date || "") < viewRange.from) return false;
-    if (viewRange.to && (e.date || "") > viewRange.to) return false;
+  function scopeActive() {
+    return !!(viewFromEl.value || viewToEl.value || flt.paid !== "all" || flt.client !== "all");
+  }
+  function matchesScope(e) {
+    var f = viewFromEl.value, t = viewToEl.value;
+    if (f && t && f > t) { var tmp = f; f = t; t = tmp; }
+    if (f && (e.date || "") < f) return false;
+    if (t && (e.date || "") > t) return false;
+    if (flt.paid !== "all" && (e.paidBy || "Me") !== flt.paid) return false;
+    if (flt.client !== "all" && (e.client || "") !== flt.client) return false;
     return true;
   }
+  function inRange(e) { return matchesScope(e); }
   function filtered() {
     var q = searchEl.value.trim().toLowerCase();
     var list = state.entries.slice().sort(function (a, b) {
@@ -1038,18 +1127,21 @@
       } else $("sumRange").textContent = "";
     } else $("sumRange").textContent = "";
 
-    $("exportCsv").disabled = all.length === 0;
-    $("exportPdf").disabled = all.length === 0;
-    $("exportDocx").disabled = all.length === 0;
-    $("exportHint").innerHTML = "Exports below cover: <b>" +
-      (viewRange.active ? esc(scopeTitle()) : "all expenses") + "</b>";
+    var anyEntries = all.length > 0;
+    $("exportCsv").disabled = !anyEntries;
+    $("exportPdf").disabled = !anyEntries;
+    $("exportDocx").disabled = !anyEntries;
+    $("previewBtn").disabled = !anyEntries;
+    fillFilterOptions();
+    $("exportHint").innerHTML = "Covering: <b>" +
+      (scopeActive() ? esc(scopeTitle()) : "all expenses") + "</b>";
 
     // suggestions
     fillDatalist("clientList", "client");
     fillDatalist("partnerList", "partner");
 
     var rows = filtered();
-    if (viewRange.active) {
+    if (scopeActive()) {
       var rTotal = rows.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
       $("listTitle").textContent = scopeTitle();
       $("listHint").innerHTML = rows.length + (rows.length === 1 ? " entry · " : " entries · ") +
@@ -1066,7 +1158,7 @@
       return;
     }
     if (!rows.length) {
-      var msg = viewRange.active ? "No expenses in " + esc(scopeTitle()) + "." : "Nothing matches “" + esc(searchEl.value.trim()) + "”.";
+      var msg = scopeActive() ? "No expenses match these filters." : "Nothing matches “" + esc(searchEl.value.trim()) + "”.";
       ledgerEl.innerHTML = '<div class="empty"><h3>Nothing here</h3><p>' + msg + '</p></div>';
       return;
     }
@@ -1103,6 +1195,25 @@
     $(id).innerHTML = out.map(function (v) { return '<option value="' + esc(v) + '">'; }).join("");
   }
 
+  function fillFilterOptions() {
+    // Paid-by options (always include Me + Vanditta, plus any others used)
+    var payers = ["Me", DEFAULT_PARTNER], seenP = { "Me": 1 }; seenP[DEFAULT_PARTNER] = 1;
+    state.entries.forEach(function (e) { var p = (e.paidBy || "Me").trim() || "Me"; if (!seenP[p]) { seenP[p] = 1; payers.push(p); } });
+    if (flt.paid !== "all" && !seenP[flt.paid]) flt.paid = "all";
+    filterPaidEl.innerHTML = '<option value="all">Paid by: anyone</option>' +
+      payers.map(function (p) { return '<option value="' + esc(p) + '"' + (flt.paid === p ? " selected" : "") + '>Paid by: ' + esc(p) + '</option>'; }).join("");
+    filterPaidEl.value = flt.paid;
+
+    // Client options from entries
+    var clients = [], seenC = {};
+    state.entries.forEach(function (e) { var c = (e.client || "").trim(); if (c && !seenC[c.toLowerCase()]) { seenC[c.toLowerCase()] = 1; clients.push(c); } });
+    clients.sort();
+    if (flt.client !== "all" && clients.indexOf(flt.client) === -1) flt.client = "all";
+    filterClientEl.innerHTML = '<option value="all">All clients</option>' +
+      clients.map(function (c) { return '<option value="' + esc(c) + '"' + (flt.client === c ? " selected" : "") + '>' + esc(c) + '</option>'; }).join("");
+    filterClientEl.value = flt.client;
+  }
+
   /* ---------- sheet ---------- */
   function openSheet(id) {
     state.editingId = id || null;
@@ -1128,6 +1239,7 @@
     fClient.value = e ? (e.client || "") : "";
     fPartner.value = e ? (e.partner || DEFAULT_PARTNER) : DEFAULT_PARTNER;
     fPaidBy.value = e ? (e.paidBy || "Me") : "Me";
+    catManage = false;
     renderDescChips();
     refreshChips(paidChips, fPaidBy);
     pendingImageId = e && e.imgId ? e.imgId : null;
@@ -1196,18 +1308,15 @@
   $("saveBtn").addEventListener("click", saveEntry);
   $("deleteBtn").addEventListener("click", deleteEntry);
   searchEl.addEventListener("input", render);
-  $("viewRange").addEventListener("click", function () {
-    if (!viewFromEl.value && !viewToEl.value) { toast("Pick a From and/or To date first"); return; }
-    var f = viewFromEl.value, t = viewToEl.value;
-    if (f && t && f > t) { var tmp = f; f = t; t = tmp; viewFromEl.value = f; viewToEl.value = t; }
-    viewRange = { from: f, to: t, active: true };
+  viewFromEl.addEventListener("change", render);
+  viewToEl.addEventListener("change", render);
+  filterPaidEl.addEventListener("change", function () { flt.paid = filterPaidEl.value; render(); });
+  filterClientEl.addEventListener("change", function () { flt.client = filterClientEl.value; render(); });
+  $("filterReset").addEventListener("click", function () {
+    viewFromEl.value = ""; viewToEl.value = ""; flt.paid = "all"; flt.client = "all"; searchEl.value = "";
     render();
   });
-  $("viewAll").addEventListener("click", function () {
-    viewRange = { from: "", to: "", active: false };
-    viewFromEl.value = ""; viewToEl.value = "";
-    render();
-  });
+  $("previewBtn").addEventListener("click", openPreview);
 
   /* ---------- backup & restore ---------- */
   $("backupBtn").addEventListener("click", function () {
@@ -1329,11 +1438,15 @@
       .sort(function (a, b) { return (a.date || "") < (b.date || "") ? -1 : (a.date || "") > (b.date || "") ? 1 : 0; });
   }
   function scopeTitle() {
-    if (!viewRange.active) return "All time";
-    if (viewRange.from && viewRange.to) return fmtDate(viewRange.from) + " to " + fmtDate(viewRange.to);
-    if (viewRange.from) return "From " + fmtDate(viewRange.from);
-    if (viewRange.to) return "Up to " + fmtDate(viewRange.to);
-    return "All time";
+    var parts = [];
+    var f = viewFromEl.value, t = viewToEl.value;
+    if (f && t && f > t) { var tmp = f; f = t; t = tmp; }
+    if (f && t) parts.push(fmtDate(f) + " to " + fmtDate(t));
+    else if (f) parts.push("From " + fmtDate(f));
+    else if (t) parts.push("Up to " + fmtDate(t));
+    if (flt.paid !== "all") parts.push("Paid by " + flt.paid);
+    if (flt.client !== "all") parts.push(flt.client);
+    return parts.length ? parts.join(" · ") : "All time";
   }
 
   /* ---------- CSV export ---------- */
@@ -1366,12 +1479,11 @@
 
   // Save a file via the platform when available, else fall back to a browser download.
   async function saveFile(filename, data, mime, okMsg) {
+    filename = String(filename).replace(/[\\/:*?"<>|·]+/g, "-").replace(/\s+/g, " ").trim();
     try {
-      var downloads = await claude.use("downloads");
-      if (downloads) {
-        await downloads.save({ filename: filename, data: data });
-        toast(okMsg);
-        return;
+      if (typeof claude !== "undefined" && claude.use) {
+        var downloads = await claude.use("downloads");
+        if (downloads) { await downloads.save({ filename: filename, data: data }); toast(okMsg); return; }
       }
     } catch (err) {
       if (err && err.code === "declined") return;
@@ -1789,6 +1901,52 @@
         "Word voucher saved \u2014 open or share it");
     } catch (err) { toast("Couldn't build the voucher"); }
   });
+
+  /* ---------- voucher preview ---------- */
+  function buildPreviewHTML(list, imgMap) {
+    var rng = voucherRange(list);
+    var total = list.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
+    var rows = list.map(function (e, i) {
+      var amt = esc(voucherMoney(e.amount)) + (e.imgId ? ' <span class="hl">(Screenshot Attached)</span>' : '');
+      return '<tr><td class="c">' + (i + 1) + '.</td><td class="c">' + esc(ddmmyyyy(e.date)) + '</td>' +
+        '<td>' + esc(e.desc || "") + '</td><td class="c">' + esc(String(Number(e.advance) || 0)) + '</td>' +
+        '<td>' + amt + '</td><td class="c">' + esc(e.client || "") + '</td>' +
+        '<td class="c">' + esc(e.partner || DEFAULT_PARTNER) + '</td></tr>';
+    }).join("");
+    var shots = list.filter(function (e) { return e.imgId && imgMap[e.imgId]; })
+      .map(function (e) { return '<img src="' + imgMap[e.imgId] + '">'; }).join("");
+    var sig = SIG_B64 ? '<img class="v-sig" src="data:image/jpeg;base64,' + SIG_B64 + '">' : '<div class="v-sig"></div>';
+    return '<div class="v-head">' + esc(rng) + '</div>' +
+      '<div class="v-name">Name: ' + esc(VOUCHER.name) + '</div>' +
+      '<div class="v-name">Address: ' + esc(VOUCHER.address) + '</div>' +
+      '<div style="margin:6px 0">Dated: ' + esc(longDate(todayISO())) + '</div>' +
+      '<div class="v-title">REIMBURSEMENT VOUCHER</div>' +
+      '<table class="v-tbl"><thead><tr>' +
+      '<th>Sr. No.</th><th>Date</th><th>Expenditure Details</th><th>Amount Paid In Advance</th><th>Amount (Rs.)</th><th>Name of the Matter/Client</th><th>Partner Concerned</th>' +
+      '</tr></thead><tbody>' + rows +
+      '<tr><td></td><td></td><td class="c"><b>Total</b></td><td class="c"><b>' + esc(voucherMoney(total)) + '</b></td><td></td><td></td><td></td></tr>' +
+      '<tr><td></td><td></td><td class="c"><b>Grand Total</b></td><td class="c"><b>' + esc(voucherMoney(total)) + '</b></td><td></td><td></td><td></td></tr>' +
+      '</tbody></table>' +
+      '<div class="v-foot">The abovementioned expenses were incurred from ' + esc(rng) + '</div>' +
+      '<div style="margin-top:14px">Yours truly,</div>' +
+      '<div style="text-align:center;margin-top:2px">Approved By</div>' + sig +
+      '<div class="v-two"><span><b>Name: ' + esc(VOUCHER.name) + '</b></span><span>' + esc(DEFAULT_PARTNER) + '</span></div>' +
+      '<div class="v-two"><span>PAN No. ' + esc(VOUCHER.pan) + '</span><span>' + esc(VOUCHER.partnerTitle) + '</span></div>' +
+      '<div class="v-two"><span></span><span><b>' + esc(VOUCHER.firm) + '</b></span></div>' +
+      (shots ? '<div class="v-shots">' + shots + '</div>' : '');
+  }
+  function openPreview() {
+    var list = scopedEntries();
+    if (!list.length) { toast("No expenses match these filters"); return; }
+    $("previewModal").classList.add("open");
+    $("pvPage").innerHTML = '<div class="preview-empty">Loading preview…</div>';
+    ensureImages(list).then(function (map) {
+      $("pvPage").innerHTML = buildPreviewHTML(list, map);
+    }).catch(function () { $("pvPage").innerHTML = buildPreviewHTML(list, {}); });
+  }
+  $("pvClose").addEventListener("click", function () { $("previewModal").classList.remove("open"); });
+  $("pvWord").addEventListener("click", function () { $("exportDocx").click(); });
+  $("pvPdf").addEventListener("click", function () { $("exportPdf").click(); });
 
   /* ---------- toast ---------- */
   var toastT;
