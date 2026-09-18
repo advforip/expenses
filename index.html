@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Matter Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@9.6.1/dist/index.iife.js"></script>
+<script src="https://accounts.google.com/gsi/client" async></script>
+<style>
+  :root {
+    --bg: #eaece9;
+    --surface: #fbfbfa;
+    --surface-2: #f2f3f1;
+    --ink: #16222b;
+    --muted: #5f6c76;
+    --faint: #8b96a0;
+    --line: #dce0e0;
+    --line-strong: #c6cccc;
+    --accent: #1c6b54;
+    --accent-soft: #e2ede8;
+    --advance: #916d16;
+    --advance-soft: #f0e8d3;
+    --danger: #a83f2c;
+    --danger-soft: #f3e0da;
+    --shadow: 0 1px 2px rgba(22,34,43,.06), 0 8px 24px rgba(22,34,43,.07);
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e151a;
+      --surface: #161f26;
+      --surface-2: #1c272f;
+      --ink: #e7edf0;
+      --muted: #94a1ab;
+      --faint: #6f7d87;
+      --line: #26313a;
+      --line-strong: #33404a;
+      --accent: #4dbf9a;
+      --accent-soft: #163029;
+      --advance: #d7b45e;
+      --advance-soft: #2c2716;
+      --danger: #e08268;
+      --danger-soft: #331e18;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e151a;
+    --surface: #161f26;
+    --surface-2: #1c272f;
+    --ink: #e7edf0;
+    --muted: #94a1ab;
+    --faint: #6f7d87;
+    --line: #26313a;
+    --line-strong: #33404a;
+    --accent: #4dbf9a;
+    --accent-soft: #163029;
+    --advance: #d7b45e;
+    --advance-soft: #2c2716;
+    --danger: #e08268;
+    --danger-soft: #331e18;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Instrument Sans", system-ui, -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 0 14px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    -webkit-backdrop-filter: saturate(1.4) blur(10px);
+    padding: calc(env(safe-area-inset-top) + 12px) 14px 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner { max-width: 640px; margin: 0 auto; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .brand { display: flex; align-items: baseline; gap: 9px; }
+  .brand h1 {
+    font-size: 18px; font-weight: 700; letter-spacing: -.01em; margin: 0;
+  }
+  .brand .rule { width: 22px; height: 2px; background: var(--accent); border-radius: 2px; align-self: center; }
+  .brand small { color: var(--muted); font-size: 12.5px; font-weight: 500; }
+  .cur-btn {
+    font: inherit; font-weight: 600; font-size: 13px; color: var(--muted);
+    background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+    padding: 5px 11px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;
+  }
+  .cur-btn:active { transform: scale(.97); }
+
+  /* ---------- Summary ledger card ---------- */
+  .summary {
+    margin-top: 14px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .summary-top {
+    padding: 15px 16px 13px;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 10px;
+  }
+  .summary-top .label { font-size: 12px; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+  .summary-top .big { font-size: 30px; font-weight: 600; letter-spacing: -.02em; margin-top: 2px; }
+  .summary-top .count {
+    text-align: right; font-size: 12px; color: var(--muted); font-weight: 500;
+    line-height: 1.5;
+  }
+  .summary-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--line);
+  }
+  .summary-grid > div { padding: 11px 16px; }
+  .summary-grid > div:first-child { border-right: 1px solid var(--line); }
+  .summary-grid .k { font-size: 11.5px; font-weight: 600; letter-spacing: .02em; text-transform: none; }
+  .summary-grid .k.adv { color: var(--advance); }
+  .summary-grid .k.bal { color: var(--muted); }
+  .summary-grid .v { font-size: 17px; font-weight: 500; margin-top: 1px; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .search {
+    flex: 1; position: relative; display: flex; align-items: center;
+  }
+  .search svg { position: absolute; left: 11px; width: 16px; height: 16px; color: var(--faint); pointer-events: none; }
+  .search input {
+    width: 100%; font: inherit; font-size: 15px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 10px 12px 10px 34px; outline: none;
+  }
+  .search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .btn {
+    font: inherit; font-weight: 600; font-size: 14px; cursor: pointer;
+    border-radius: var(--radius-sm); padding: 10px 14px; border: 1px solid var(--line);
+    background: var(--surface); color: var(--ink); display: inline-flex; align-items: center; gap: 7px;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn svg { width: 16px; height: 16px; }
+  .btn.ghost { color: var(--muted); }
+  .btn:disabled { opacity: .45; cursor: default; }
+
+  /* ---------- Section heading ---------- */
+  .list-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin: 22px 2px 8px;
+  }
+  .list-head h2 { font-size: 13px; font-weight: 600; color: var(--muted); margin: 0; letter-spacing: .01em; }
+  .list-head .hint { font-size: 12px; color: var(--faint); }
+
+  /* ---------- Entry rows ---------- */
+  .ledger { display: flex; flex-direction: column; gap: 8px; }
+  .entry {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 12px 14px; cursor: pointer; box-shadow: var(--shadow);
+    transition: border-color .12s ease;
+    position: relative;
+  }
+  .entry:active { border-color: var(--line-strong); }
+  .entry-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .entry-desc { font-weight: 600; font-size: 15.5px; letter-spacing: -.005em; overflow-wrap: anywhere; }
+  .entry-amt { text-align: right; flex-shrink: 0; }
+  .entry-amt .a { font-size: 16px; font-weight: 600; }
+  .entry-amt .adv { font-size: 12px; color: var(--advance); font-weight: 500; margin-top: 1px; }
+  .entry-meta { display: flex; flex-wrap: wrap; gap: 6px 8px; margin-top: 9px; align-items: center; }
+  .chip {
+    font-size: 12px; font-weight: 500; color: var(--muted);
+    background: var(--surface-2); border-radius: 6px; padding: 2px 8px;
+    display: inline-flex; align-items: center; gap: 5px; overflow-wrap: anywhere;
+  }
+  .chip.client { color: var(--accent); background: var(--accent-soft); }
+  .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .7; flex-shrink: 0; }
+  .entry-date { font-size: 12px; color: var(--faint); margin-left: auto; font-weight: 500; }
+
+  /* ---------- Empty ---------- */
+  .empty {
+    text-align: center; padding: 46px 24px; color: var(--muted);
+    border: 1px dashed var(--line-strong); border-radius: var(--radius); background: var(--surface);
+  }
+  .empty .ic { width: 40px; height: 40px; margin: 0 auto 12px; color: var(--faint); }
+  .empty h3 { margin: 0 0 5px; font-size: 16px; color: var(--ink); font-weight: 600; }
+  .empty p { margin: 0; font-size: 14px; }
+
+  /* ---------- Sticky add bar ---------- */
+  .addbar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 25;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--line);
+  }
+  .addbar .inner { max-width: 640px; margin: 0 auto; }
+  .btn-primary {
+    width: 100%; justify-content: center; font-size: 15.5px; font-weight: 600;
+    background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px;
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  :root[data-theme="dark"] .btn-primary, :root:not([data-theme="light"]) .btn-primary { color: #06120d; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .btn-primary { color: #fff; } }
+  .btn-primary:active { transform: scale(.99); filter: brightness(.97); }
+
+  /* ---------- Sheet / modal ---------- */
+  .scrim {
+    position: fixed; inset: 0; z-index: 40; background: rgba(10,16,20,.42);
+    opacity: 0; pointer-events: none; transition: opacity .22s ease;
+  }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .sheet {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 41;
+    background: var(--surface); border-radius: 20px 20px 0 0;
+    max-width: 640px; margin: 0 auto;
+    transform: translateY(100%); transition: transform .26s cubic-bezier(.32,.72,0,1);
+    max-height: 92dvh; display: flex; flex-direction: column;
+    box-shadow: 0 -8px 40px rgba(0,0,0,.25);
+  }
+  .sheet.open { transform: translateY(0); }
+  .sheet-grab { width: 38px; height: 4px; background: var(--line-strong); border-radius: 4px; margin: 9px auto 2px; flex-shrink: 0; }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 18px 10px; flex-shrink: 0; }
+  .sheet-head h2 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+  .icon-btn { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; display: flex; border-radius: 8px; }
+  .icon-btn:active { background: var(--surface-2); }
+  .sheet-body { overflow-y: auto; padding: 4px 18px 18px; -webkit-overflow-scrolling: touch; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+  .field .req { color: var(--danger); font-weight: 700; }
+  .field input {
+    width: 100%; font: inherit; font-size: 16px; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 13px; outline: none;
+  }
+  .field input.mono { font-size: 16px; }
+  .field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); background: var(--surface); }
+  .field input.err { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .amt-wrap { position: relative; }
+  .amt-wrap .sym { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--faint); font-size: 15px; pointer-events: none; }
+  .amt-wrap input { padding-left: 30px; }
+  .field .note { font-size: 12px; color: var(--faint); margin-top: 5px; }
+  .sheet-foot { padding: 12px 18px calc(16px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); flex-shrink: 0; display: flex; gap: 10px; }
+  .sheet-foot .btn-primary { flex: 1; }
+  .btn-danger {
+    font: inherit; font-weight: 600; font-size: 15px; cursor: pointer;
+    background: var(--danger-soft); color: var(--danger); border: none; border-radius: 12px;
+    padding: 14px 16px; display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn-danger:active { transform: scale(.98); }
+  .btn-danger svg { width: 17px; height: 17px; }
+
+  /* ---------- Toast ---------- */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 20px); z-index: 60;
+    background: var(--ink); color: var(--bg); font-size: 14px; font-weight: 500;
+    padding: 11px 18px; border-radius: 999px; box-shadow: var(--shadow);
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* currency popover */
+  .cur-menu {
+    position: absolute; top: 100%; right: 0; margin-top: 6px; z-index: 30;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    box-shadow: var(--shadow); padding: 5px; min-width: 128px; display: none;
+  }
+  .cur-menu.open { display: block; }
+  .cur-menu button {
+    width: 100%; text-align: left; font: inherit; font-size: 14px; color: var(--ink);
+    background: none; border: none; padding: 9px 11px; border-radius: 8px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  }
+  .cur-menu button:active, .cur-menu button.sel { background: var(--surface-2); }
+  .cur-menu button .tick { color: var(--accent); }
+  .cur-pos { position: relative; }
+  .syncbar { max-width: 640px; margin: 6px auto 0; display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
+  .syncdot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .syncbar .linkish { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 2px; }
+  .gate { position: fixed; inset: 0; z-index: 80; background: var(--bg); display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .gate-card { max-width: 360px; text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); padding: 30px 24px; }
+  .gate-badge { font-size: 40px; margin-bottom: 6px; }
+  .gate-card h2 { margin: 0 0 10px; font-size: 22px; font-weight: 700; }
+  .gate-card p { margin: 0 0 18px; font-size: 14.5px; color: var(--muted); line-height: 1.5; }
+  .gate-card .btn-primary { width: 100%; }
+  .gate-fine { font-size: 12px !important; color: var(--faint) !important; margin: 14px 0 0 !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+
+  /* ---------- Export row ---------- */
+  .export-row { display: flex; gap: 8px; margin-top: 8px; }
+  .export-row .btn { flex: 1; justify-content: center; }
+  .rangebar { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+  .rangebar input[type="date"] {
+    flex: 1; font: inherit; font-size: 14px; color: var(--ink);
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
+    padding: 9px 10px; outline: none; min-width: 0;
+  }
+  .rangebar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .range-arrow { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .rangebtns { display: flex; gap: 8px; margin-top: 8px; }
+  .rangebtns .btn { flex: 1; justify-content: center; }
+  .export-hint { font-size: 12.5px; color: var(--muted); margin-top: 16px; text-align: center; }
+  .export-hint b { color: var(--accent); font-weight: 600; }
+  .voucher-btn { width: 100%; margin-top: 8px; }
+  .voucher-btn:disabled { opacity: .45; }
+  .day-total { font-size: 12px; color: var(--accent); font-weight: 600; }
+  .data-row { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding: 0 2px; }
+  .data-note { font-size: 12px; color: var(--faint); margin-right: auto; display: inline-flex; align-items: center; gap: 5px; }
+  .linkish { font: inherit; font-size: 13px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 4px 2px; }
+  .linkish:active { opacity: .6; }
+  .data-sep { color: var(--faint); font-size: 12px; }
+
+  /* ---------- Quick-select chips (form) ---------- */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chips button {
+    font: inherit; font-size: 13px; font-weight: 500; color: var(--muted);
+    background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px;
+    padding: 6px 12px; cursor: pointer;
+  }
+  .chips button.sel { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .chips button:active { transform: scale(.97); }
+  .chips button.add { color: var(--accent); border-style: dashed; }
+  .add-cat { display: flex; gap: 6px; width: 100%; }
+  .add-cat input {
+    flex: 1; font: inherit; font-size: 14px; color: var(--ink);
+    background: var(--surface-2); border: 1px solid var(--accent); border-radius: 8px; padding: 7px 10px; outline: none;
+  }
+  .add-cat button { white-space: nowrap; }
+
+  /* paid-by chip on rows */
+  .chip.paid { color: var(--advance); background: var(--advance-soft); }
+  .chip.cat { color: var(--muted); background: var(--surface-2); }
+
+  /* ---------- Row thumbnail ---------- */
+  .entry-thumb {
+    width: 34px; height: 34px; border-radius: 7px; object-fit: cover;
+    border: 1px solid var(--line); flex-shrink: 0; background: var(--surface-2);
+  }
+  .entry-left { display: flex; gap: 10px; align-items: flex-start; min-width: 0; }
+  .clip {
+    display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--faint);
+    font-weight: 500;
+  }
+  .clip svg { width: 12px; height: 12px; }
+
+  /* ---------- Image field in sheet ---------- */
+  .img-attach {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 14px; border: 1px dashed var(--line-strong); border-radius: 10px;
+    background: var(--surface-2); color: var(--muted); font: inherit; font-weight: 600; font-size: 14px;
+    cursor: pointer;
+  }
+  .img-attach:active { transform: scale(.99); }
+  .img-attach svg { width: 18px; height: 18px; }
+  .img-preview { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+  .img-preview img { display: block; width: 100%; max-height: 240px; object-fit: contain; background: var(--surface-2); cursor: zoom-in; }
+  .img-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .img-actions button {
+    flex: 1; font: inherit; font-size: 13px; font-weight: 600; padding: 9px; border-radius: 9px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .img-actions button.rm { color: var(--danger); }
+  .img-actions button svg { width: 15px; height: 15px; }
+
+  /* ---------- Lightbox ---------- */
+  .lightbox {
+    position: fixed; inset: 0; z-index: 70; background: rgba(6,10,13,.9);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 100%; border-radius: 8px; object-fit: contain; }
+  .lightbox .close-lb {
+    position: absolute; top: calc(env(safe-area-inset-top) + 12px); right: 16px;
+    background: rgba(255,255,255,.15); border: none; color: #fff; width: 40px; height: 40px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="brand">
+        <span class="rule"></span>
+        <h1>Matter Ledger</h1>
+      </div>
+      <div class="cur-pos">
+        <button class="cur-btn" id="curBtn" aria-label="Change currency">
+          <span id="curLabel">₹ INR</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="cur-menu" id="curMenu"></div>
+      </div>
+    </div>
+    <div class="syncbar">
+      <span class="syncdot" id="syncDot"></span>
+      <span id="syncStatus">Not signed in</span>
+      <button class="linkish" id="authAction">Sign in with Google</button>
+    </div>
+  </header>
+
+  <div class="gate" id="gate" style="display:none">
+    <div class="gate-card">
+      <div class="gate-badge">📒</div>
+      <h2>Matter Ledger</h2>
+      <p>Your expenses are saved privately to <b>your own Google Drive</b> — permanent, and available on any device you sign into.</p>
+      <button class="btn-primary" id="gateSignIn">Sign in with Google</button>
+      <p class="gate-fine">Nothing is stored anywhere else. You can sign out anytime.</p>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <!-- Summary -->
+    <section class="summary">
+      <div class="summary-top">
+        <div>
+          <div class="label">Total expenditure</div>
+          <div class="big mono" id="sumAmount">—</div>
+        </div>
+        <div class="count">
+          <span id="sumCount">0 entries</span><br>
+          <span id="sumRange"></span>
+        </div>
+      </div>
+      <div class="summary-grid">
+        <div>
+          <div class="k adv">Paid in advance</div>
+          <div class="v mono" id="sumAdvance">—</div>
+        </div>
+        <div>
+          <div class="k bal">Balance (amount − advance)</div>
+          <div class="v mono" id="sumBalance">—</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" id="search" placeholder="Search client, partner, expenditure…" autocomplete="off">
+      </div>
+    </div>
+    <div class="rangebar">
+      <input type="date" id="viewFrom" class="mono" aria-label="From date">
+      <span class="range-arrow">to</span>
+      <input type="date" id="viewTo" class="mono" aria-label="To date">
+    </div>
+    <div class="rangebtns">
+      <button class="btn" id="viewRange">View expenses</button>
+      <button class="btn ghost" id="viewAll">Show all</button>
+    </div>
+    <div class="export-hint" id="exportHint">Exports below cover: <b>all expenses</b></div>
+    <button class="btn-primary voucher-btn" id="exportDocx" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M13 3v6h6"/></svg>
+      Word voucher (firm format)
+    </button>
+    <div class="export-row">
+      <button class="btn ghost" id="exportPdf" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a0 0 0 01 0 0H7a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M13 3v6h6"/><rect x="8" y="13" width="8" height="6" rx="1"/></svg>
+        PDF
+      </button>
+      <button class="btn ghost" id="exportCsv" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l4-4m-4 4l-4-4"/><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        CSV for Sheets
+      </button>
+    </div>
+
+    <div class="data-row">
+      <span class="data-note" id="dataNote">Saved on this device</span>
+      <button class="linkish" id="backupBtn">Back up</button>
+      <span class="data-sep">·</span>
+      <button class="linkish" id="restoreBtn">Restore</button>
+      <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+    </div>
+
+    <div class="list-head">
+      <h2 id="listTitle">Entries</h2>
+      <span class="hint" id="listHint"></span>
+    </div>
+
+    <div class="ledger" id="ledger"></div>
+  </div>
+
+  <!-- Add bar -->
+  <div class="addbar">
+    <div class="inner">
+      <button class="btn-primary" id="addBtn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+        Add expense
+      </button>
+    </div>
+  </div>
+
+  <!-- Sheet -->
+  <div class="scrim" id="scrim"></div>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h2 id="sheetTitle">Add expense</h2>
+      <button class="icon-btn" id="closeSheet" aria-label="Close">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="field">
+        <label for="fDate">Date of expense <span class="req">*</span></label>
+        <input type="date" id="fDate" class="mono">
+        <div class="note">Defaults to today — tap to set the date the expense was actually incurred (e.g. a day in August).</div>
+        <div class="note" id="recordedNote" style="display:none"></div>
+      </div>
+      <div class="field">
+        <label for="fDesc">Expenditure <span class="req">*</span></label>
+        <div class="chips" id="descChips"></div>
+        <input type="text" id="fDesc" placeholder="e.g. Taxi — or tap a quick pick above" autocomplete="off">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="fAmount">Amount <span class="req">*</span></label>
+          <div class="amt-wrap">
+            <span class="sym" id="symAmount">₹</span>
+            <input type="number" id="fAmount" class="mono" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+        <div class="field">
+          <label for="fAdvance">Paid in advance</label>
+          <div class="amt-wrap">
+            <span class="sym" id="symAdvance">₹</span>
+            <input type="number" id="fAdvance" class="mono" inputmode="decimal" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="fClient">Name of the matter / client</label>
+        <input type="text" id="fClient" list="clientList" placeholder="e.g. Sharma v. State" autocomplete="off">
+        <datalist id="clientList"></datalist>
+      </div>
+      <div class="field">
+        <label for="fPartner">Partner concerned</label>
+        <input type="text" id="fPartner" list="partnerList" placeholder="e.g. A. Mehta" autocomplete="off">
+        <datalist id="partnerList"></datalist>
+      </div>
+      <div class="field">
+        <label for="fPaidBy">Paid by</label>
+        <div class="chips" id="paidChips"></div>
+        <input type="text" id="fPaidBy" placeholder="Who paid for this expense" autocomplete="off">
+        <div class="note">Use “Vanditta Malhotra Hegde” when she pays directly. The client is charged either way.</div>
+      </div>
+      <div class="field">
+        <label>Payment screenshot</label>
+        <div id="imgArea"></div>
+        <input type="file" id="fImage" accept="image/*" hidden>
+        <div class="note" id="imgNote">Optional. Stored on this device; appears in the PDF export.</div>
+      </div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn-danger" id="deleteBtn" style="display:none" aria-label="Delete entry">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>
+      </button>
+      <button class="btn-primary" id="saveBtn">Save entry</button>
+    </div>
+  </div>
+
+  <div class="lightbox" id="lightbox">
+    <button class="close-lb" id="closeLb" aria-label="Close image">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <img id="lightboxImg" alt="Payment screenshot">
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ============================================================
+     CONFIG — set this after creating your Google OAuth Client ID
+     (see the setup guide). Paste the client ID between the quotes.
+     ============================================================ */
+  var GOOGLE_CLIENT_ID = "PASTE_YOUR_GOOGLE_CLIENT_ID_HERE";
+  var DRIVE_FOLDER = "Matter Ledger Expenses";
+  var DATA_FILE = "matter-ledger-data.json";
+  var LS_CACHE = "matter-ledger-cache-v2";
+  var LS_SIGNED = "matter-ledger-signed-in";
+  var LS_DIRTY = "matter-ledger-dirty";
+
+  var CURRENCIES = [
+    { code: "INR", sym: "₹", label: "₹ INR" },
+    { code: "USD", sym: "$", label: "$ USD" },
+    { code: "EUR", sym: "€", label: "€ EUR" },
+    { code: "GBP", sym: "£", label: "£ GBP" },
+    { code: "AED", sym: "AED ", label: "AED" },
+    { code: "NONE", sym: "", label: "No symbol" }
+  ];
+
+  var state = { entries: [], currency: "INR", editingId: null, cats: [] };
+  var DEFAULT_PARTNER = "Vanditta Malhotra Hegde";
+  var CATEGORIES = ["Printing", "Scanning", "Stamp paper", "Taxi", "Notary", "Food"];
+  var PAID_BY = ["Me", "Vanditta Malhotra Hegde"];
+  state.cats = CATEGORIES.slice();
+  var pendingImage = null;    // data URL shown in the open sheet
+  var pendingImageId = null;  // Drive file id of the attached screenshot
+
+  var drive = { token: null, tokenExp: 0, tokenClient: null, folderId: null, fileId: null, signedIn: false };
+  var imgCache = {};          // imgId -> dataURL (session cache)
+  var dirty = false, saveTimer = null, syncStatus = "";
+
+  /* ---------- data document <-> state ---------- */
+  function docFromState() {
+    return {
+      version: 2, currency: state.currency, cats: state.cats,
+      entries: state.entries.map(function (e) {
+        return { id: e.id, date: e.date, desc: e.desc, amount: e.amount, advance: e.advance,
+          client: e.client, partner: e.partner, paidBy: e.paidBy, imgId: e.imgId || null,
+          created: e.created, recorded: e.recorded };
+      })
+    };
+  }
+  function applyDoc(doc) {
+    if (!doc) return;
+    if (doc.currency) state.currency = doc.currency;
+    if (Array.isArray(doc.cats) && doc.cats.length) state.cats = doc.cats;
+    if (Array.isArray(doc.entries)) state.entries = doc.entries;
+  }
+
+  /* ---------- local cache (instant load + offline view of text) ---------- */
+  function readCache() {
+    try { var raw = localStorage.getItem(LS_CACHE); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
+  }
+  function writeCache() { try { localStorage.setItem(LS_CACHE, JSON.stringify(docFromState())); } catch (e) { } }
+
+  /* legacy entry points used throughout the app */
+  function setDirty(v) { dirty = v; try { v ? localStorage.setItem(LS_DIRTY, "1") : localStorage.removeItem(LS_DIRTY); } catch (e) { } }
+  function load() {
+    var c = readCache(); if (c) applyDoc(c);
+    try { dirty = localStorage.getItem(LS_DIRTY) === "1"; } catch (e) { }
+  }
+  function save() { scheduleSave(); return true; }
+  function saveCats() { scheduleSave(); }
+  function scheduleSave() {
+    writeCache();
+    setDirty(true);
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(pushToDrive, 800);
+    renderSync();
+  }
+
+  /* ---------- Google Identity Services (auth) ---------- */
+  function gisReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
+  function initAuth() {
+    if (drive.tokenClient) return true;
+    if (!gisReady()) return false;
+    drive.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: "https://www.googleapis.com/auth/drive.file",
+      callback: function () { }
+    });
+    return true;
+  }
+  function requestToken(interactive) {
+    return new Promise(function (resolve, reject) {
+      if (!initAuth()) { reject(new Error("gis_unavailable")); return; }
+      var done = false;
+      var timer = setTimeout(function () { if (!done) { done = true; reject(new Error("timeout")); } }, 12000);
+      drive.tokenClient.callback = function (resp) {
+        if (done) return; done = true; clearTimeout(timer);
+        if (resp && resp.access_token) {
+          drive.token = resp.access_token;
+          drive.tokenExp = Date.now() + (Number(resp.expires_in || 3600) - 60) * 1000;
+          resolve(resp.access_token);
+        } else { reject(new Error(resp && resp.error ? resp.error : "no_token")); }
+      };
+      drive.tokenClient.error_callback = function (err) {
+        if (done) return; done = true; clearTimeout(timer);
+        reject(err || new Error("auth_error"));
+      };
+      try { drive.tokenClient.requestAccessToken({ prompt: interactive ? "" : "none" }); }
+      catch (e) { if (!done) { done = true; clearTimeout(timer); reject(e); } }
+    });
+  }
+  function ensureToken() {
+    if (drive.token && Date.now() < drive.tokenExp) return Promise.resolve(drive.token);
+    return requestToken(false);
+  }
+
+  /* ---------- Drive REST ---------- */
+  function driveFetch(url, opts, isRetry) {
+    opts = opts || {};
+    return ensureToken().then(function (tok) {
+      opts.headers = opts.headers || {};
+      opts.headers["Authorization"] = "Bearer " + tok;
+      return fetch(url, opts).then(function (r) {
+        if (r.status === 401 && !isRetry) {
+          drive.token = null;
+          return requestToken(false).then(function () { return driveFetch(url, opts, true); });
+        }
+        return r;
+      });
+    });
+  }
+  function driveList(q) {
+    return driveFetch("https://www.googleapis.com/drive/v3/files?spaces=drive&fields=files(id,name)&q=" + encodeURIComponent(q))
+      .then(function (r) { return r.json(); });
+  }
+  function driveCreateFolder(name) {
+    return driveFetch("https://www.googleapis.com/drive/v3/files?fields=id", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name, mimeType: "application/vnd.google-apps.folder" })
+    }).then(function (r) { return r.json(); });
+  }
+  function multipart(meta, contentType, contentPart) {
+    var b = "-------ml" + Date.now() + Math.random().toString(36).slice(2);
+    var pre = "--" + b + "\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n" + JSON.stringify(meta) +
+      "\r\n--" + b + "\r\nContent-Type: " + contentType + "\r\n\r\n";
+    var post = "\r\n--" + b + "--";
+    return { boundary: b, body: new Blob([pre, contentPart, post], { type: "multipart/related; boundary=" + b }) };
+  }
+  function driveCreateJson(name, folderId, obj) {
+    var mp = multipart({ name: name, parents: folderId ? [folderId] : undefined, mimeType: "application/json" },
+      "application/json", JSON.stringify(obj));
+    return driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+      method: "POST", headers: { "Content-Type": "multipart/related; boundary=" + mp.boundary }, body: mp.body
+    }).then(function (r) { return r.json(); });
+  }
+  function driveUpdateJson(fileId, obj) {
+    return driveFetch("https://www.googleapis.com/upload/drive/v3/files/" + fileId + "?uploadType=media", {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(obj)
+    }).then(function (r) { return r.json(); });
+  }
+  function driveReadJson(fileId) {
+    return driveFetch("https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media").then(function (r) { return r.json(); });
+  }
+  function driveUploadImageBlob(folderId, blob) {
+    var mp = multipart({ name: "shot-" + Date.now() + ".jpg", parents: folderId ? [folderId] : undefined }, "image/jpeg", blob);
+    return driveFetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id", {
+      method: "POST", headers: { "Content-Type": "multipart/related; boundary=" + mp.boundary }, body: mp.body
+    }).then(function (r) { return r.json(); });
+  }
+  function driveDownloadDataUrl(fileId) {
+    return driveFetch("https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media")
+      .then(function (r) { return r.blob(); })
+      .then(function (blob) {
+        return new Promise(function (resolve) {
+          var fr = new FileReader(); fr.onload = function () { resolve(fr.result); };
+          fr.onerror = function () { resolve(null); }; fr.readAsDataURL(blob);
+        });
+      });
+  }
+
+  /* fetch a screenshot's data URL (cache or Drive) */
+  function getImageDataUrl(imgId) {
+    if (!imgId) return Promise.resolve(null);
+    if (imgCache[imgId]) return Promise.resolve(imgCache[imgId]);
+    return driveDownloadDataUrl(imgId).then(function (url) { if (url) imgCache[imgId] = url; return url; });
+  }
+  // Resolve {imgId: dataURL} for every entry in the list that has a screenshot.
+  function ensureImages(list) {
+    var ids = [];
+    list.forEach(function (e) { if (e.imgId && ids.indexOf(e.imgId) === -1) ids.push(e.imgId); });
+    return Promise.all(ids.map(function (id) {
+      return getImageDataUrl(id).then(function (url) { return { id: id, url: url }; });
+    })).then(function (arr) {
+      var map = {};
+      arr.forEach(function (o) { if (o.url) map[o.id] = o.url; });
+      return map;
+    });
+  }
+
+  /* ---------- locate/create the data file, then sync ---------- */
+  function driveEnsureData() {
+    return driveList("name='" + DRIVE_FOLDER + "' and mimeType='application/vnd.google-apps.folder' and trashed=false")
+      .then(function (res) {
+        var f = res.files && res.files[0];
+        return f ? f.id : driveCreateFolder(DRIVE_FOLDER).then(function (r) { return r.id; });
+      })
+      .then(function (folderId) {
+        drive.folderId = folderId;
+        return driveList("name='" + DATA_FILE + "' and trashed=false").then(function (res) {
+          var file = res.files && res.files[0];
+          if (file) { drive.fileId = file.id; return driveReadJson(file.id); }
+          return driveCreateJson(DATA_FILE, folderId, docFromState()).then(function (r) { drive.fileId = r.id; return null; });
+        });
+      });
+  }
+  function pushToDrive() {
+    if (!drive.signedIn || !drive.fileId) return Promise.resolve();
+    setStatus("syncing");
+    return driveUpdateJson(drive.fileId, docFromState())
+      .then(function () { setDirty(false); setStatus("synced"); })
+      .catch(function () { setStatus("error"); });
+  }
+  function afterSignedIn() {
+    drive.signedIn = true;
+    try { localStorage.setItem(LS_SIGNED, "1"); } catch (e) { }
+    setStatus("syncing");
+    driveEnsureData().then(function (doc) {
+      if (dirty) { return pushToDrive().then(updateAuthUI); }
+      if (doc) { applyDoc(doc); writeCache(); render(); }
+      setStatus("synced"); updateAuthUI();
+    }).catch(function () { setStatus("error"); updateAuthUI(); });
+  }
+  function signIn() {
+    if (GOOGLE_CLIENT_ID.indexOf("PASTE_") === 0) { toast("Add your Google Client ID first (see setup guide)"); return; }
+    if (!initAuth()) { toast("Google sign-in is still loading — try again in a moment"); return; }
+    requestToken(true).then(afterSignedIn).catch(function () { toast("Sign-in was cancelled"); });
+  }
+  function signOut() {
+    drive.token = null; drive.signedIn = false; drive.fileId = null; drive.folderId = null;
+    try { localStorage.removeItem(LS_SIGNED); } catch (e) { }
+    updateAuthUI();
+  }
+  function trySilent() {
+    if (!initAuth()) { return; }
+    requestToken(false).then(afterSignedIn).catch(function () { setStatus(""); updateAuthUI(); });
+  }
+
+  /* ---------- auth UI ---------- */
+  function setStatus(s) { syncStatus = s; renderSync(); }
+  function renderSync() {
+    var el = $("syncStatus"); if (!el) return;
+    if (drive.signedIn) {
+      el.textContent = dirty || syncStatus === "syncing" ? "Syncing…"
+        : syncStatus === "error" ? "Sync error — will retry" : "Saved to your Google Drive";
+    } else {
+      el.textContent = readCache() ? "Offline — showing saved copy" : "Not signed in";
+    }
+    var act = $("authAction"); if (act) act.textContent = drive.signedIn ? "Sign out" : "Sign in with Google";
+  }
+  function updateAuthUI() {
+    var gate = $("gate");
+    if (gate) gate.style.display = (!drive.signedIn && !readCache()) ? "flex" : "none";
+    renderSync();
+  }
+
+
+
+  /* ---------- helpers ---------- */
+  function curSym() {
+    var c = CURRENCIES.find(function (x) { return x.code === state.currency; });
+    return c ? c.sym : "";
+  }
+  function fmt(n) {
+    n = Number(n) || 0;
+    var s = n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    return curSym() + s;
+  }
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"]/g, function (m) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[m];
+    });
+  }
+  function fmtDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso + "T00:00:00");
+    if (isNaN(d)) return iso;
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  }
+  function todayISO() {
+    var d = new Date(), off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function isoFromTs(ts) {
+    var d = new Date(ts), off = d.getTimezoneOffset();
+    return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
+  }
+  function recordedOf(e) { return e.recorded || (e.created ? isoFromTs(e.created) : ""); }
+
+  /* ---------- elements ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  var ledgerEl = $("ledger"), searchEl = $("search");
+  var sheet = $("sheet"), scrim = $("scrim");
+  var fDate = $("fDate"), fDesc = $("fDesc"), fAmount = $("fAmount"),
+      fAdvance = $("fAdvance"), fClient = $("fClient"), fPartner = $("fPartner");
+  var fImage = $("fImage"), imgArea = $("imgArea");
+  var fPaidBy = $("fPaidBy");
+  var descChips = $("descChips"), paidChips = $("paidChips");
+  var viewFromEl = $("viewFrom"), viewToEl = $("viewTo");
+  var viewRange = { from: "", to: "", active: false };
+
+  /* ---------- currency menu ---------- */
+  function buildCurMenu() {
+    var menu = $("curMenu");
+    menu.innerHTML = CURRENCIES.map(function (c) {
+      var sel = c.code === state.currency;
+      return '<button data-code="' + c.code + '" class="' + (sel ? "sel" : "") + '">' +
+        esc(c.label) + (sel ? '<span class="tick">✓</span>' : '') + '</button>';
+    }).join("");
+    menu.querySelectorAll("button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        state.currency = b.getAttribute("data-code");
+        save(); applyCurrency(); menu.classList.remove("open");
+      });
+    });
+  }
+  function applyCurrency() {
+    var c = CURRENCIES.find(function (x) { return x.code === state.currency; });
+    $("curLabel").textContent = c ? c.label : "—";
+    var sym = curSym() || "";
+    $("symAmount").textContent = sym;
+    $("symAdvance").textContent = sym;
+    document.querySelectorAll(".amt-wrap input").forEach(function (i) {
+      i.style.paddingLeft = sym ? "30px" : "13px";
+    });
+    buildCurMenu();
+    render();
+  }
+  $("curBtn").addEventListener("click", function (e) {
+    e.stopPropagation(); $("curMenu").classList.toggle("open");
+  });
+  document.addEventListener("click", function () { $("curMenu").classList.remove("open"); });
+
+  /* ---------- quick-fill chips ---------- */
+  function buildChips(container, presets, input) {
+    container.innerHTML = presets.map(function (p) {
+      return '<button type="button" data-val="' + esc(p) + '">' + esc(p) + '</button>';
+    }).join("");
+    container.querySelectorAll("button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        input.value = b.getAttribute("data-val");
+        refreshChips(container, input);
+      });
+    });
+    input.addEventListener("input", function () { refreshChips(container, input); });
+  }
+  function refreshChips(container, input) {
+    var v = input.value.trim().toLowerCase();
+    container.querySelectorAll("button").forEach(function (b) {
+      b.classList.toggle("sel", b.getAttribute("data-val").toLowerCase() === v);
+    });
+  }
+  buildChips(paidChips, PAID_BY, fPaidBy);
+
+  /* ---------- expenditure quick-picks (double as categories) ---------- */
+  function renderDescChips() {
+    var html = state.cats.map(function (c) {
+      return '<button type="button" data-val="' + esc(c) + '">' + esc(c) + '</button>';
+    }).join("");
+    html += '<button type="button" class="add" data-add="1">＋ New</button>';
+    descChips.innerHTML = html;
+    descChips.querySelectorAll("button").forEach(function (b) {
+      b.addEventListener("click", function () {
+        if (b.getAttribute("data-add")) { showAddCat(); return; }
+        fDesc.value = b.getAttribute("data-val");
+        fDesc.classList.remove("err");
+        highlightDescChips();
+      });
+    });
+    highlightDescChips();
+  }
+  function highlightDescChips() {
+    var v = fDesc.value.trim().toLowerCase();
+    descChips.querySelectorAll("button[data-val]").forEach(function (b) {
+      b.classList.toggle("sel", b.getAttribute("data-val").toLowerCase() === v);
+    });
+  }
+  function showAddCat() {
+    descChips.innerHTML =
+      '<div class="add-cat">' +
+        '<input type="text" id="newCat" placeholder="New quick pick, e.g. Courier" autocomplete="off">' +
+        '<button type="button" class="sel" id="newCatOk">Add</button>' +
+        '<button type="button" id="newCatCancel">Cancel</button>' +
+      '</div>';
+    var inp = $("newCat"); inp.focus();
+    function commit() {
+      var v = inp.value.trim();
+      if (v) {
+        var exists = state.cats.some(function (c) { return c.toLowerCase() === v.toLowerCase(); });
+        if (!exists) { state.cats.push(v); saveCats(); }
+        fDesc.value = v; fDesc.classList.remove("err");
+      }
+      renderDescChips();
+    }
+    $("newCatOk").addEventListener("click", commit);
+    $("newCatCancel").addEventListener("click", renderDescChips);
+    inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); commit(); } });
+  }
+  fDesc.addEventListener("input", highlightDescChips);
+
+  /* ---------- render ---------- */
+  function inRange(e) {
+    if (!viewRange.active) return true;
+    if (viewRange.from && (e.date || "") < viewRange.from) return false;
+    if (viewRange.to && (e.date || "") > viewRange.to) return false;
+    return true;
+  }
+  function filtered() {
+    var q = searchEl.value.trim().toLowerCase();
+    var list = state.entries.slice().sort(function (a, b) {
+      if (a.date !== b.date) return a.date < b.date ? 1 : -1;
+      return (b.created || 0) - (a.created || 0);
+    });
+    list = list.filter(inRange);
+    if (q) list = list.filter(function (e) {
+      return [e.desc, e.client, e.partner].join(" ").toLowerCase().indexOf(q) !== -1;
+    });
+    return list;
+  }
+
+  function render() {
+    var all = state.entries;
+    var totAmt = all.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
+    var totAdv = all.reduce(function (s, e) { return s + (Number(e.advance) || 0); }, 0);
+    $("sumAmount").textContent = fmt(totAmt);
+    $("sumAdvance").textContent = fmt(totAdv);
+    $("sumBalance").textContent = fmt(totAmt - totAdv);
+    $("sumCount").textContent = all.length + (all.length === 1 ? " entry" : " entries");
+
+    if (all.length) {
+      var dates = all.map(function (e) { return e.date; }).filter(Boolean).sort();
+      if (dates.length) {
+        var a = fmtDate(dates[0]), b = fmtDate(dates[dates.length - 1]);
+        $("sumRange").textContent = a === b ? a : a + " – " + b;
+      } else $("sumRange").textContent = "";
+    } else $("sumRange").textContent = "";
+
+    $("exportCsv").disabled = all.length === 0;
+    $("exportPdf").disabled = all.length === 0;
+    $("exportDocx").disabled = all.length === 0;
+    $("exportHint").innerHTML = "Exports below cover: <b>" +
+      (viewRange.active ? esc(scopeTitle()) : "all expenses") + "</b>";
+
+    // suggestions
+    fillDatalist("clientList", "client");
+    fillDatalist("partnerList", "partner");
+
+    var rows = filtered();
+    if (viewRange.active) {
+      var rTotal = rows.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
+      $("listTitle").textContent = scopeTitle();
+      $("listHint").innerHTML = rows.length + (rows.length === 1 ? " entry · " : " entries · ") +
+        '<span class="day-total">' + esc(fmt(rTotal)) + '</span>';
+    } else {
+      $("listTitle").textContent = "Entries";
+      $("listHint").textContent = searchEl.value.trim() && all.length ? (rows.length + " of " + all.length) : "";
+    }
+
+    if (!all.length) {
+      ledgerEl.innerHTML =
+        '<div class="empty"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5a2 2 0 012-2h9l5 5v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg>' +
+        '<h3>No entries yet</h3><p>Tap “Add expense” to record your first line item.</p></div>';
+      return;
+    }
+    if (!rows.length) {
+      var msg = viewRange.active ? "No expenses in " + esc(scopeTitle()) + "." : "Nothing matches “" + esc(searchEl.value.trim()) + "”.";
+      ledgerEl.innerHTML = '<div class="empty"><h3>Nothing here</h3><p>' + msg + '</p></div>';
+      return;
+    }
+
+    ledgerEl.innerHTML = rows.map(function (e) {
+      var meta = "";
+      if (e.client) meta += '<span class="chip client"><span class="dot"></span>' + esc(e.client) + '</span>';
+      if (e.paidBy && e.paidBy !== "Me") meta += '<span class="chip paid"><span class="dot"></span>paid: ' + esc(e.paidBy) + '</span>';
+      if (e.imgId) meta += '<span class="clip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15l-5-5L5 21"/><path d="M21 5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>photo</span>';
+      meta += '<span class="entry-date mono">' + esc(fmtDate(e.date)) + '</span>';
+      var adv = (Number(e.advance) || 0) > 0 ? '<div class="adv mono">adv ' + esc(fmt(e.advance)) + '</div>' : '';
+      var thumb = "";
+      return '<div class="entry" data-id="' + e.id + '">' +
+        '<div class="entry-top">' +
+          '<div class="entry-left">' + thumb + '<div class="entry-desc">' + esc(e.desc || "—") + '</div></div>' +
+          '<div class="entry-amt"><div class="a mono">' + esc(fmt(e.amount)) + '</div>' + adv + '</div>' +
+        '</div>' +
+        '<div class="entry-meta">' + meta + '</div>' +
+      '</div>';
+    }).join("");
+
+    ledgerEl.querySelectorAll(".entry").forEach(function (el) {
+      el.addEventListener("click", function () { openSheet(el.getAttribute("data-id")); });
+    });
+  }
+
+  function fillDatalist(id, key) {
+    var seen = {}, out = [];
+    state.entries.forEach(function (e) {
+      var v = (e[key] || "").trim();
+      if (v && !seen[v.toLowerCase()]) { seen[v.toLowerCase()] = 1; out.push(v); }
+    });
+    out.sort();
+    $(id).innerHTML = out.map(function (v) { return '<option value="' + esc(v) + '">'; }).join("");
+  }
+
+  /* ---------- sheet ---------- */
+  function openSheet(id) {
+    state.editingId = id || null;
+    var e = id ? state.entries.find(function (x) { return x.id === id; }) : null;
+    $("sheetTitle").textContent = e ? "Edit entry" : "Add expense";
+    $("deleteBtn").style.display = e ? "inline-flex" : "none";
+    $("saveBtn").textContent = e ? "Save changes" : "Save entry";
+
+    fDate.value = e ? e.date : todayISO();
+    var rn = $("recordedNote");
+    var rec = e ? recordedOf(e) : "";
+    if (rec) {
+      rn.style.display = "";
+      rn.textContent = rec !== (e ? e.date : "")
+        ? "Recorded on " + fmtDate(rec) + " · back-dated entry"
+        : "Recorded on " + fmtDate(rec);
+    } else {
+      rn.style.display = "none";
+    }
+    fDesc.value = e ? (e.desc || "") : "";
+    fAmount.value = e && e.amount != null ? e.amount : "";
+    fAdvance.value = e && Number(e.advance) ? e.advance : "";
+    fClient.value = e ? (e.client || "") : "";
+    fPartner.value = e ? (e.partner || DEFAULT_PARTNER) : DEFAULT_PARTNER;
+    fPaidBy.value = e ? (e.paidBy || "Me") : "Me";
+    renderDescChips();
+    refreshChips(paidChips, fPaidBy);
+    pendingImageId = e && e.imgId ? e.imgId : null;
+    pendingImage = null;
+    renderImgArea();
+    if (pendingImageId) {
+      getImageDataUrl(pendingImageId).then(function (url) {
+        if (url && state.editingId === (e && e.id)) { pendingImage = url; renderImgArea(); }
+      });
+    }
+    [fDesc, fAmount].forEach(function (el) { el.classList.remove("err"); });
+
+    scrim.classList.add("open");
+    sheet.classList.add("open");
+    document.body.style.overflow = "hidden";
+    setTimeout(function () { if (!e) fDesc.focus(); }, 300);
+  }
+  function closeSheet() {
+    scrim.classList.remove("open");
+    sheet.classList.remove("open");
+    document.body.style.overflow = "";
+    state.editingId = null;
+  }
+
+  function saveEntry() {
+    var desc = fDesc.value.trim();
+    var amount = parseFloat(fAmount.value);
+    var ok = true;
+    if (!desc) { fDesc.classList.add("err"); ok = false; } else fDesc.classList.remove("err");
+    if (!(amount >= 0) || fAmount.value.trim() === "") { fAmount.classList.add("err"); ok = false; } else fAmount.classList.remove("err");
+    if (!fDate.value) { fDate.value = todayISO(); }
+    if (!ok) { toast("Add an expenditure and amount"); return; }
+
+    var data = {
+      date: fDate.value,
+      desc: desc,
+      amount: amount,
+      advance: parseFloat(fAdvance.value) || 0,
+      client: fClient.value.trim(),
+      partner: fPartner.value.trim() || DEFAULT_PARTNER,
+      paidBy: fPaidBy.value.trim() || "Me",
+      imgId: pendingImageId || null
+    };
+
+    if (state.editingId) {
+      var idx = state.entries.findIndex(function (x) { return x.id === state.editingId; });
+      if (idx !== -1) state.entries[idx] = Object.assign(state.entries[idx], data);
+      toast("Entry updated");
+    } else {
+      data.id = uid(); data.created = Date.now(); data.recorded = todayISO();
+      state.entries.push(data);
+      toast("Entry added");
+    }
+    save(); render(); closeSheet();
+  }
+
+  function deleteEntry() {
+    if (!state.editingId) return;
+    state.entries = state.entries.filter(function (x) { return x.id !== state.editingId; });
+    save(); render(); closeSheet(); toast("Entry deleted");
+  }
+
+  $("addBtn").addEventListener("click", function () { openSheet(null); });
+  $("closeSheet").addEventListener("click", closeSheet);
+  scrim.addEventListener("click", closeSheet);
+  $("saveBtn").addEventListener("click", saveEntry);
+  $("deleteBtn").addEventListener("click", deleteEntry);
+  searchEl.addEventListener("input", render);
+  $("viewRange").addEventListener("click", function () {
+    if (!viewFromEl.value && !viewToEl.value) { toast("Pick a From and/or To date first"); return; }
+    var f = viewFromEl.value, t = viewToEl.value;
+    if (f && t && f > t) { var tmp = f; f = t; t = tmp; viewFromEl.value = f; viewToEl.value = t; }
+    viewRange = { from: f, to: t, active: true };
+    render();
+  });
+  $("viewAll").addEventListener("click", function () {
+    viewRange = { from: "", to: "", active: false };
+    viewFromEl.value = ""; viewToEl.value = "";
+    render();
+  });
+
+  /* ---------- backup & restore ---------- */
+  $("backupBtn").addEventListener("click", function () {
+    var backup = {
+      app: "matter-ledger", version: 1, exportedAt: new Date().toISOString(),
+      currency: state.currency, cats: state.cats, entries: state.entries
+    };
+    saveFile("Matter Ledger Backup — " + todayISO() + ".json", JSON.stringify(backup),
+      "application/json", "Backup saved — keep it in Drive to be safe");
+  });
+  $("restoreBtn").addEventListener("click", function () { $("restoreFile").value = ""; $("restoreFile").click(); });
+  $("restoreFile").addEventListener("change", function () {
+    var file = this.files && this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var parsed;
+      try { parsed = JSON.parse(ev.target.result); } catch (e) { toast("That file isn't a valid backup"); return; }
+      var incoming = (parsed && parsed.entries) || null;
+      if (!Array.isArray(incoming)) { toast("That file isn't a Matter Ledger backup"); return; }
+      var byId = {}; state.entries.forEach(function (e) { if (e && e.id) byId[e.id] = true; });
+      var added = 0;
+      incoming.forEach(function (e) {
+        if (e && e.id && !byId[e.id]) { state.entries.push(e); byId[e.id] = true; added++; }
+      });
+      if (Array.isArray(parsed.cats)) parsed.cats.forEach(function (c) {
+        if (c && state.cats.indexOf(c) === -1) state.cats.push(c);
+      });
+      saveCats(); save(); render();
+      toast(added ? ("Restored " + added + (added === 1 ? " entry" : " entries")) : "Backup already up to date");
+    };
+    reader.onerror = function () { toast("Couldn't read that file"); };
+    reader.readAsText(file);
+  });
+
+  /* ---------- screenshot handling ---------- */
+  function renderImgArea() {
+    if (pendingImage) {
+      imgArea.innerHTML =
+        '<div class="img-preview"><img id="imgThumb" src="' + pendingImage + '" alt="Payment screenshot"></div>' +
+        '<div class="img-actions">' +
+          '<button type="button" data-act="replace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v6h6M20 20v-6h-6"/><path d="M20 8a8 8 0 00-14-3M4 16a8 8 0 0014 3"/></svg>Replace</button>' +
+          '<button type="button" class="rm" data-act="remove"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m2 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"/></svg>Remove</button>' +
+        '</div>';
+    } else {
+      imgArea.innerHTML =
+        '<button type="button" class="img-attach" data-act="attach">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15l-5-5L5 21"/><path d="M21 5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>' +
+          'Attach screenshot</button>';
+    }
+  }
+  imgArea.addEventListener("click", function (ev) {
+    var btn = ev.target.closest("[data-act]");
+    if (btn) {
+      var act = btn.getAttribute("data-act");
+      if (act === "attach" || act === "replace") { fImage.value = ""; fImage.click(); }
+      else if (act === "remove") { pendingImage = null; pendingImageId = null; renderImgArea(); }
+      return;
+    }
+    if (ev.target.id === "imgThumb" && pendingImage) openLightbox(pendingImage);
+  });
+  function dataUrlToBlob(url) { return new Blob([dataUrlToBytes(url)], { type: "image/jpeg" }); }
+  fImage.addEventListener("change", function () {
+    var file = fImage.files && fImage.files[0];
+    if (!file) return;
+    if (!drive.signedIn) { toast("Sign in with Google to attach screenshots"); return; }
+    toast("Processing image…");
+    compressImage(file, function (dataUrl) {
+      if (!dataUrl) { toast("Couldn't read that image"); return; }
+      pendingImage = dataUrl; pendingImageId = null; renderImgArea();
+      toast("Uploading screenshot…");
+      var folderReady = drive.folderId ? Promise.resolve(drive.folderId) : driveEnsureData().then(function () { return drive.folderId; });
+      folderReady.then(function () {
+        return driveUploadImageBlob(drive.folderId, dataUrlToBlob(dataUrl));
+      }).then(function (r) {
+        if (r && r.id) { pendingImageId = r.id; imgCache[r.id] = dataUrl; toast("Screenshot attached"); }
+        else { pendingImage = null; renderImgArea(); toast("Upload failed — try again"); }
+      }).catch(function () { pendingImage = null; renderImgArea(); toast("Upload failed — check connection"); });
+    });
+  });
+
+  function compressImage(file, cb) {
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        var max = 1600, w = img.width, h = img.height;
+        if (Math.max(w, h) > max) { var s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+        var c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        var ctx = c.getContext("2d");
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(img, 0, 0, w, h);
+        try { cb(c.toDataURL("image/jpeg", 0.72)); } catch (e) { cb(null); }
+      };
+      img.onerror = function () { cb(null); };
+      img.src = ev.target.result;
+    };
+    reader.onerror = function () { cb(null); };
+    reader.readAsDataURL(file);
+  }
+
+  /* ---------- lightbox ---------- */
+  function openLightbox(src) {
+    $("lightboxImg").src = src;
+    $("lightbox").classList.add("open");
+  }
+  function closeLightbox() {
+    $("lightbox").classList.remove("open");
+    $("lightboxImg").src = "";
+  }
+  $("closeLb").addEventListener("click", closeLightbox);
+  $("lightbox").addEventListener("click", function (e) { if (e.target === this) closeLightbox(); });
+
+  /* ---------- export scope (matches the viewed range) ---------- */
+  function scopedEntries() {
+    return state.entries.slice()
+      .filter(inRange)
+      .sort(function (a, b) { return (a.date || "") < (b.date || "") ? -1 : (a.date || "") > (b.date || "") ? 1 : 0; });
+  }
+  function scopeTitle() {
+    if (!viewRange.active) return "All time";
+    if (viewRange.from && viewRange.to) return fmtDate(viewRange.from) + " to " + fmtDate(viewRange.to);
+    if (viewRange.from) return "From " + fmtDate(viewRange.from);
+    if (viewRange.to) return "Up to " + fmtDate(viewRange.to);
+    return "All time";
+  }
+
+  /* ---------- CSV export ---------- */
+  function csvCell(v) {
+    v = v == null ? "" : String(v);
+    if (/[",\n\r]/.test(v)) return '"' + v.replace(/"/g, '""') + '"';
+    return v;
+  }
+  function buildCSV() {
+    var headers = ["Date", "Expenditure", "Amount paid in advance", "Amount",
+      "Name of the matter/client", "Partner concerned", "Paid by", "Running total"];
+    var rows = scopedEntries();
+    var run = 0;
+    var lines = [headers.map(csvCell).join(",")];
+    rows.forEach(function (e) {
+      run += Number(e.amount) || 0;
+      lines.push([
+        e.date || "",
+        e.desc || "",
+        (Number(e.advance) || 0).toFixed(2),
+        (Number(e.amount) || 0).toFixed(2),
+        e.client || "",
+        e.partner || DEFAULT_PARTNER,
+        e.paidBy || "Me",
+        run.toFixed(2)
+      ].map(csvCell).join(","));
+    });
+    return "\ufeff" + lines.join("\r\n");
+  }
+
+  // Save a file via the platform when available, else fall back to a browser download.
+  async function saveFile(filename, data, mime, okMsg) {
+    try {
+      var downloads = await claude.use("downloads");
+      if (downloads) {
+        await downloads.save({ filename: filename, data: data });
+        toast(okMsg);
+        return;
+      }
+    } catch (err) {
+      if (err && err.code === "declined") return;
+    }
+    try {
+      var blob = (data instanceof Blob) ? data : new Blob([data], { type: mime });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+      a.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      toast(okMsg);
+    } catch (e2) {
+      toast("Export unavailable in this view");
+    }
+  }
+
+  $("exportCsv").addEventListener("click", function () {
+    if (!scopedEntries().length) { toast("No entries in that period"); return; }
+    saveFile("Matter Expenses — " + scopeTitle() + ".csv", buildCSV(),
+      "text/csv;charset=utf-8", "CSV saved — import it into Google Sheets");
+  });
+
+  $("exportPdf").addEventListener("click", function () {
+    var list = scopedEntries();
+    if (!list.length) { toast("No entries in that period"); return; }
+    if (!window.jspdf || !window.jspdf.jsPDF) { toast("PDF tools didn't load — check your connection"); return; }
+    toast("Building PDF…");
+    ensureImages(list).then(function (imgMap) {
+      try { buildPDF(imgMap); } catch (e) { toast("Couldn't build the PDF"); }
+    }).catch(function () { toast("Couldn't load screenshots — check your connection"); });
+  });
+
+  /* ---------- PDF export (with screenshots) ---------- */
+  function sortedPairs(obj) {
+    return Object.keys(obj).map(function (k) { return [k, obj[k]]; })
+      .sort(function (a, b) { return b[1] - a[1]; });
+  }
+
+  function buildPDF(imgMap) {
+    imgMap = imgMap || {};
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ unit: "mm", format: "a4" });
+    var pageW = 210, pageH = 297, M = 14, cw = pageW - M * 2;
+    var y = M;
+    function nl(h) { if (y + h > pageH - M) { doc.addPage(); y = M; } }
+
+    var list = scopedEntries();
+    var tA = list.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
+    var tAdv = list.reduce(function (s, e) { return s + (Number(e.advance) || 0); }, 0);
+    var byPayer = {}, byCat = {};
+    list.forEach(function (e) {
+      var amt = Number(e.amount) || 0;
+      var p = (e.paidBy || "Me").trim() || "Me";
+      var c = (e.desc || "").trim() || "Unlabelled";
+      byPayer[p] = (byPayer[p] || 0) + amt;
+      byCat[c] = (byCat[c] || 0) + amt;
+    });
+
+    // Title
+    doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(20, 34, 43);
+    doc.text("Matter Ledger — Expense Report", M, y + 4); y += 8;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(110, 120, 130);
+    doc.text(scopeTitle() + "  ·  Generated " +
+      new Date().toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" }), M, y); y += 7;
+
+    // Totals box
+    doc.setFillColor(244, 246, 244);
+    doc.roundedRect(M, y, cw, 15, 2, 2, "F");
+    doc.setFontSize(9); doc.setTextColor(95, 108, 118);
+    doc.text("Total expenditure", M + 4, y + 6);
+    doc.text("Paid in advance", M + 68, y + 6);
+    doc.text("Balance", M + 128, y + 6);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(20, 34, 43);
+    doc.text(fmt(tA), M + 4, y + 12);
+    doc.text(fmt(tAdv), M + 68, y + 12);
+    doc.text(fmt(tA - tAdv), M + 128, y + 12);
+    doc.text(list.length + (list.length === 1 ? " entry" : " entries"), pageW - M, y + 12, { align: "right" });
+    y += 21;
+
+    // Breakdown block helper
+    function block(title, pairs) {
+      nl(9 + pairs.length * 5);
+      doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(20, 34, 43);
+      doc.text(title, M, y + 1); y += 5.5;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(95, 108, 118);
+      pairs.forEach(function (pr) {
+        nl(5);
+        var label = doc.splitTextToSize(String(pr[0]), 100)[0];
+        doc.text(label, M + 2, y + 1);
+        doc.text(fmt(pr[1]), M + 108, y + 1);
+        y += 5;
+      });
+      y += 3;
+    }
+    block("Reconciliation — who paid", sortedPairs(byPayer));
+    block("By expenditure", sortedPairs(byCat));
+
+    // Detail heading
+    nl(10);
+    doc.setDrawColor(200, 206, 206); doc.setLineWidth(0.3); doc.line(M, y, pageW - M, y); y += 5;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(20, 34, 43);
+    doc.text("Detail", M, y + 1); y += 5;
+
+    var run = 0;
+    list.forEach(function (e) {
+      run += Number(e.amount) || 0;
+      nl(42);
+      doc.setDrawColor(226, 230, 230); doc.setLineWidth(0.2); doc.line(M, y, pageW - M, y); y += 6;
+
+      doc.setFont("helvetica", "bold"); doc.setFontSize(11); doc.setTextColor(20, 34, 43);
+      var head = fmtDate(e.date) + "  ·  " + (e.desc || "—");
+      var headLines = doc.splitTextToSize(head, cw - 40);
+      doc.text(headLines, M, y + 1);
+      doc.setFontSize(11.5);
+      doc.text(fmt(e.amount), pageW - M, y + 1, { align: "right" });
+      y += headLines.length * 5.2 + 1;
+
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(95, 108, 118);
+      doc.text("Paid by: " + (e.paidBy || "Me"), M, y + 1); y += 5;
+      if ((Number(e.advance) || 0) > 0) { doc.text("Paid in advance: " + fmt(e.advance), M, y + 1); y += 5; }
+      if (e.client) { doc.text("Matter / client: " + e.client, M, y + 1); y += 5; }
+      doc.text("Partner: " + (e.partner || DEFAULT_PARTNER), M, y + 1); y += 5;
+      var recIso = recordedOf(e);
+      if (recIso && recIso !== e.date) {
+        doc.setTextColor(140, 150, 160);
+        doc.text("Recorded on " + fmtDate(recIso) + " (back-dated)", M, y + 1); y += 5;
+      }
+      doc.setTextColor(28, 107, 84);
+      doc.text("Running total: " + fmt(run), M, y + 1); y += 5;
+
+      var eImg = e.imgId ? imgMap[e.imgId] : null;
+      if (eImg) {
+        var props;
+        try { props = doc.getImageProperties(eImg); } catch (er) { props = null; }
+        if (props && props.width) {
+          var imgW = Math.min(85, cw);
+          var imgH = imgW * props.height / props.width;
+          if (imgH > 105) { imgH = 105; imgW = imgH * props.width / props.height; }
+          nl(imgH + 8);
+          doc.setFontSize(8.5); doc.setTextColor(140, 150, 160);
+          doc.text("Payment screenshot", M, y + 1); y += 3;
+          try { doc.addImage(eImg, "JPEG", M, y, imgW, imgH); } catch (er2) {}
+          y += imgH + 4;
+        }
+      }
+      y += 3;
+    });
+
+    var blob = doc.output("blob");
+    saveFile("Matter Expenses — " + scopeTitle() + ".pdf", blob, "application/pdf",
+      "PDF saved — screenshots included");
+  }
+
+  /* ---------- Word voucher (firm format) ---------- */
+  var VOUCHER = {
+    name: "Lavnish Kumar Sharma",
+    address: "703, 7th Floor, Building No. 5, Unity Complex, Malad West - 400064",
+    pan: "BPHPS0159F",
+    partnerTitle: "Managing Partner",
+    firm: "VMH & Associates"
+  };
+  var SIG_B64 = "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tWVorqeifFf4ueAfgr4Nn8c/ETX47GyiYRxLjfNdTNwkEEY+aWVzwsagsxryrwp8Kfif+0x4lj+KX7TNk2k+EVaGbwv8JHAYRtFL5kV5qzD/AF9wWCSC25hgKoPndWd/O/2SP2fP2rfjT8ZU/bP/AG9IrTRtTs1aPwB8MrCZbi20G3ZeJZi2R9obIZiMOWjjZivlxxRfX1fQ5jHD8L1HhMJVhVxFvfqwfNGDe8KUtm19qrHfaDSu5+dQVbMX7StFxpp+7F6N+cv0j83fSwAAMAAD0Aooor5E9cKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooARgxUhWwexxXz3+zx/wTd+CPwM+LeqftE+JNW1nx/8AEbVpS0vjPxrcrdXVsNvlhbcbQIcRgRgjJVAUUqpKn6For0cHm2ZZdh61DC1XCNZKM7aOUVryt78r6q9npdOyMKuGoV6kJ1I3cdVfo+/r+QYA6CiiivONwooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//2Q==";
+
+  function b64ToBytes(b64) {
+    var bin = atob(b64), n = bin.length, u = new Uint8Array(n);
+    for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
+    return u;
+  }
+  function dataUrlToBytes(url) { return b64ToBytes((url || "").split(",")[1] || ""); }
+  function loadShot(dataUrl) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve({ bytes: dataUrlToBytes(dataUrl), w: img.naturalWidth || 600, h: img.naturalHeight || 1000 }); };
+      img.onerror = function () { resolve(null); };
+      img.src = dataUrl;
+    });
+  }
+  function ordN(n) { var s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+  function longDate(iso) { var dt = new Date(iso + "T00:00:00"); return ordN(dt.getDate()) + " " + dt.toLocaleString("en-US", { month: "long" }) + ", " + dt.getFullYear(); }
+  function voucherRange(list) {
+    var ds = list.map(function (e) { return e.date; }).filter(Boolean).sort();
+    if (!ds.length) return "";
+    var a = new Date(ds[0] + "T00:00:00"), b = new Date(ds[ds.length - 1] + "T00:00:00");
+    var f = function (dt) { return ordN(dt.getDate()) + " " + dt.toLocaleString("en-US", { month: "long" }) + " " + dt.getFullYear(); };
+    return f(a) + " - " + f(b);
+  }
+  function ddmmyyyy(iso) { var p = (iso || "").split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0] : iso; }
+  function voucherMoney(n) { return (Number(n) || 0).toLocaleString("en-IN") + "/-"; }
+
+  function buildVoucher(docx, data) {
+  const {
+    Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+    WidthType, BorderStyle, AlignmentType, HeadingLevel, ImageRun,
+    VerticalAlign, ShadingType, Header, PositionalTab, PositionalTabAlignment,
+    PositionalTabLeader
+  } = docx;
+
+  const FONT = "Times New Roman";
+  const COLW = [520, 1050, 2540, 900, 1430, 1460, 1126]; // sums 9026 (A4 content @1in margins)
+  const TABLE_W = COLW.reduce((a, b) => a + b, 0);
+
+  const thin = { style: BorderStyle.SINGLE, size: 4, color: "000000" };
+  const cellBorders = { top: thin, bottom: thin, left: thin, right: thin };
+
+  function tp(text, opts) {
+    opts = opts || {};
+    return new Paragraph({
+      alignment: opts.align || AlignmentType.LEFT,
+      spacing: { after: 0, before: 0 },
+      children: [new TextRun({ text: text == null ? "" : String(text), bold: !!opts.bold, font: FONT, size: opts.size || 20 })]
+    });
+  }
+
+  function headerCell(text, i) {
+    return new TableCell({
+      width: { size: COLW[i], type: WidthType.DXA },
+      borders: cellBorders,
+      verticalAlign: VerticalAlign.CENTER,
+      shading: { type: ShadingType.CLEAR, fill: "FFFFFF" },
+      children: [new Paragraph({
+        alignment: AlignmentType.CENTER,
+        spacing: { after: 0, before: 0 },
+        children: [new TextRun({ text, bold: true, font: FONT, size: 20, allCaps: true })]
+      })]
+    });
+  }
+
+  function cell(children, i, align) {
+    return new TableCell({
+      width: { size: COLW[i], type: WidthType.DXA },
+      borders: cellBorders,
+      verticalAlign: VerticalAlign.CENTER,
+      children: Array.isArray(children) ? children : [children]
+    });
+  }
+
+  // ---- header table row ----
+  const headTitles = ["Sr. No.", "Date", "Expenditure Details", "Amount Paid In Advance",
+    "Amount (Rs.)", "Name of the Matter/Client", "Partner Concerned"];
+  const headerRow = new TableRow({
+    tableHeader: true,
+    children: headTitles.map((t, i) => headerCell(t, i))
+  });
+
+  // ---- data rows ----
+  const dataRows = data.entries.map((e) => {
+    // amount cell: "<amt>/-" plus optional highlighted "(Screenshot Attached)"
+    const amtRuns = [new TextRun({ text: e.amountText, font: FONT, size: 20 })];
+    if (e.hasShot) {
+      amtRuns.push(new TextRun({ text: " (Screenshot Attached)", font: FONT, size: 20, highlight: "yellow" }));
+    }
+    return new TableRow({
+      children: [
+        cell(tp(e.sr + ".", { bold: true, align: AlignmentType.CENTER }), 0),
+        cell(tp(e.dateText, { align: AlignmentType.CENTER }), 1),
+        cell(tp(e.desc), 2),
+        cell(tp(e.advance, { align: AlignmentType.CENTER }), 3),
+        cell(new Paragraph({ spacing: { after: 0, before: 0 }, children: amtRuns }), 4),
+        cell(tp(e.client, { align: AlignmentType.CENTER }), 5),
+        cell(tp(e.partner, { align: AlignmentType.CENTER }), 6)
+      ]
+    });
+  });
+
+  // ---- total + grand total rows ----
+  function totalRow(label, amountText) {
+    return new TableRow({
+      children: [
+        cell(tp(""), 0),
+        cell(tp(""), 1),
+        cell(tp(label, { bold: true, align: AlignmentType.CENTER }), 2),
+        cell(tp(amountText, { bold: true, align: AlignmentType.CENTER }), 3),
+        cell(tp(""), 4),
+        cell(tp(""), 5),
+        cell(tp(""), 6)
+      ]
+    });
+  }
+
+  const table = new Table({
+    columnWidths: COLW,
+    width: { size: TABLE_W, type: WidthType.DXA },
+    rows: [headerRow, ...dataRows, totalRow("Total", data.totalText), totalRow("Grand Total", data.totalText)]
+  });
+
+  // ---- signature + approver block ----
+  const sigChildren = [];
+  if (data.sigBytes) {
+    sigChildren.push(new Paragraph({
+      spacing: { before: 120, after: 0 },
+      children: [new ImageRun({ type: "jpg", data: data.sigBytes, transformation: { width: data.sigW || 162, height: data.sigH || 110 } })]
+    }));
+  } else {
+    sigChildren.push(new Paragraph({ spacing: { before: 480 }, children: [new TextRun("")] }));
+  }
+
+  function twoColLine(left, right, opts) {
+    opts = opts || {};
+    return new Paragraph({
+      spacing: { after: 0, before: 0 },
+      tabStops: [{ type: docx.TabStopType ? docx.TabStopType.LEFT : "left", position: 5400 }],
+      children: [
+        new TextRun({ text: left, bold: !!opts.lb, font: FONT, size: 22 }),
+        new TextRun({ text: "\t" + right, bold: !!opts.rb, font: FONT, size: 22 })
+      ]
+    });
+  }
+
+  // ---- screenshots grid (2 per row, borderless) ----
+  const shotBlocks = [];
+  if (data.shots && data.shots.length) {
+    shotBlocks.push(new Paragraph({ spacing: { before: 240 }, children: [new TextRun("")] }));
+    const COLS = 2, CELL_W = 4400; // dxa per screenshot cell
+    const rows = [];
+    for (let i = 0; i < data.shots.length; i += COLS) {
+      const cells = [];
+      for (let j = 0; j < COLS; j++) {
+        const s = data.shots[i + j];
+        let kids = [new Paragraph({ children: [new TextRun("")] })];
+        if (s) {
+          const maxW = 240; // px
+          const w = maxW, h = Math.round(maxW * (s.h / s.w));
+          kids = [new Paragraph({
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 80 },
+            children: [new ImageRun({ type: "jpg", data: s.bytes, transformation: { width: w, height: h } })]
+          })];
+        }
+        cells.push(new TableCell({
+          width: { size: CELL_W, type: WidthType.DXA },
+          borders: {
+            top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE },
+            left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }
+          },
+          verticalAlign: VerticalAlign.TOP,
+          children: kids
+        }));
+      }
+      rows.push(new TableRow({ children: cells }));
+    }
+    shotBlocks.push(new Table({
+      columnWidths: [CELL_W, CELL_W],
+      width: { size: CELL_W * 2, type: WidthType.DXA },
+      borders: {
+        top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE },
+        left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE },
+        insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE }
+      },
+      rows
+    }));
+  }
+
+  const doc = new Document({
+    styles: { default: { document: { run: { font: FONT, size: 22 } } } },
+    sections: [{
+      properties: {},
+      headers: {
+        default: new Header({
+          children: [new Paragraph({ spacing: { after: 0 }, children: [new TextRun({ text: data.rangeHeader || data.rangeText, font: FONT, size: 20 })] })]
+        })
+      },
+      children: [
+        new Paragraph({ spacing: { after: 0 }, children: [new TextRun({ text: "Name: " + data.name, bold: true, font: FONT, size: 24 })] }),
+        new Paragraph({ spacing: { after: 0 }, children: [new TextRun({ text: "Address: " + data.address, bold: true, font: FONT, size: 24 })] }),
+        new Paragraph({ spacing: { before: 120, after: 120 }, children: [new TextRun({ text: "Dated: " + data.datedText, font: FONT, size: 22 })] }),
+        new Paragraph({
+          alignment: AlignmentType.CENTER, spacing: { after: 120 },
+          children: [new TextRun({ text: "REIMBURSEMENT VOUCHER", bold: true, underline: {}, font: FONT, size: 24 })]
+        }),
+        table,
+        new Paragraph({ spacing: { before: 200, after: 0 }, children: [new TextRun({ text: "The abovementioned expenses were incurred from " + data.rangeText, font: FONT, size: 22 })] }),
+        new Paragraph({ spacing: { before: 200, after: 0 }, children: [new TextRun({ text: "Yours truly,", font: FONT, size: 22 })] }),
+        new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 40, after: 0 }, children: [new TextRun({ text: "Approved By", font: FONT, size: 22 })] }),
+        ...sigChildren,
+        twoColLine("Name: " + data.name, data.partner, { lb: true }),
+        twoColLine("PAN No. " + data.pan, data.partnerTitle),
+        twoColLine("", data.firm, { rb: true }),
+        ...shotBlocks
+      ]
+    }]
+  });
+  return doc;
+}
+
+  $("exportDocx").addEventListener("click", async function () {
+    var list = scopedEntries();
+    if (!list.length) { toast("No entries in that period"); return; }
+    if (!window.docx || !window.docx.Packer) { toast("Word tools didn't load — check your connection"); return; }
+    toast("Building Word voucher\u2026");
+    try {
+      var imgMap = await ensureImages(list);
+      var shots = [];
+      for (var i = 0; i < list.length; i++) {
+        var du = list[i].imgId ? imgMap[list[i].imgId] : null;
+        if (du) { var s = await loadShot(du); if (s) shots.push(s); }
+      }
+      var total = list.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
+      var data = {
+        name: VOUCHER.name, address: VOUCHER.address, pan: VOUCHER.pan,
+        partner: DEFAULT_PARTNER, partnerTitle: VOUCHER.partnerTitle, firm: VOUCHER.firm,
+        datedText: longDate(todayISO()),
+        rangeText: voucherRange(list), rangeHeader: voucherRange(list),
+        sigBytes: SIG_B64 ? b64ToBytes(SIG_B64) : null, sigW: 162, sigH: 110,
+        totalText: voucherMoney(total),
+        entries: list.map(function (e, i) {
+          return { sr: i + 1, dateText: ddmmyyyy(e.date), desc: e.desc || "", advance: (Number(e.advance) || 0),
+                   amountText: voucherMoney(e.amount), hasShot: !!e.imgId, client: e.client || "", partner: DEFAULT_PARTNER };
+        }),
+        shots: shots
+      };
+      var doc = buildVoucher(window.docx, data);
+      var blob = await window.docx.Packer.toBlob(doc);
+      saveFile("Reimbursement Voucher \u2014 " + scopeTitle() + ".docx", blob,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Word voucher saved \u2014 open or share it");
+    } catch (err) { toast("Couldn't build the voucher"); }
+  });
+
+  /* ---------- toast ---------- */
+  var toastT;
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("show"); }, 2200);
+  }
+
+  /* ---------- init ---------- */
+  load();
+  buildCurMenu();
+  applyCurrency();
+  render();
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+
+  // auth buttons
+  $("authAction").addEventListener("click", function () { drive.signedIn ? signOut() : signIn(); });
+  $("gateSignIn").addEventListener("click", signIn);
+  window.addEventListener("online", function () { if (drive.signedIn && dirty) pushToDrive(); renderSync(); });
+  window.addEventListener("offline", renderSync);
+
+  // Attempt silent sign-in if the user has signed in before. Wait for the
+  // Google library to load first (it's loaded async in the page head).
+  updateAuthUI();
+  (function waitForGis(tries) {
+    if (gisReady()) {
+      if (localStorage.getItem(LS_SIGNED) === "1") trySilent();
+      return;
+    }
+    if (tries > 0) setTimeout(function () { waitForGis(tries - 1); }, 300);
+  })(20);
+})();
+</script>
+</body>
+</html>
