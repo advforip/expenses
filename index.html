@@ -27,6 +27,7 @@
     --danger: #9d3b30;
     --danger-soft: #f2ddd6;
     --shadow: 0 1px 2px rgba(26,35,52,.05), 0 8px 24px rgba(26,35,52,.09);
+    --on-accent: #ffffff;
     --radius: 14px;
     --radius-sm: 9px;
   }
@@ -47,6 +48,7 @@
       --danger: #e0836e;
       --danger-soft: #331d18;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+      --on-accent: #0b1220;
     }
   }
   :root[data-theme="dark"] {
@@ -65,6 +67,7 @@
     --danger: #e0836e;
     --danger-soft: #331d18;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+    --on-accent: #0b1220;
   }
 
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -215,11 +218,9 @@
   .addbar .inner { max-width: 640px; margin: 0 auto; }
   .btn-primary {
     width: 100%; justify-content: center; font-size: 15.5px; font-weight: 600;
-    background: var(--accent); color: #fff; border: none; padding: 14px; border-radius: 12px;
+    background: var(--accent); color: var(--on-accent); border: none; padding: 14px; border-radius: 12px;
     display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
   }
-  :root[data-theme="dark"] .btn-primary, :root:not([data-theme="light"]) .btn-primary { color: #06120d; }
-  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .btn-primary { color: #fff; } }
   .btn-primary:active { transform: scale(.99); filter: brightness(.97); }
 
   /* ---------- Sheet / modal ---------- */
@@ -294,6 +295,35 @@
   .cur-menu button:active, .cur-menu button.sel { background: var(--surface-2); }
   .cur-menu button .tick { color: var(--accent); }
   .cur-pos { position: relative; }
+  .head-actions { display: flex; align-items: center; gap: 8px; }
+  .theme-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface);
+    color: var(--accent); display: grid; place-items: center; cursor: pointer; padding: 0;
+  }
+  .theme-btn:active { transform: scale(.95); }
+  .theme-seg { display: flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface-2); margin-bottom: 18px; }
+  .theme-seg button { flex: 1; font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 7px 0; border-radius: 999px; cursor: pointer; }
+  .theme-seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+  .theme-group { font-size: 13px; font-weight: 600; color: var(--muted); margin: 16px 0 8px; }
+  .theme-group:first-of-type { margin-top: 0; }
+  .theme-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .theme-tile {
+    font: inherit; text-align: left; cursor: pointer; background: var(--surface); color: var(--ink);
+    border: 1.5px solid var(--line); border-radius: 12px; padding: 8px; display: grid; gap: 6px;
+  }
+  .theme-tile[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .theme-sw { display: flex; height: 26px; border-radius: 7px; overflow: hidden; border: 1px solid rgba(0,0,0,.08); }
+  .theme-sw span { flex: 1; } .theme-sw span:first-child { flex: 2.2; }
+  .theme-name { font-size: 13px; font-weight: 600; line-height: 1.25; }
+  #themeSheet { z-index: 73; } #themeScrim { z-index: 72; }
+
+  /* Ledger rise: plays once when the app opens */
+  html.opening .brand .rule { animation: mlDraw .55s ease-out both; transform-origin: left; }
+  html.opening .brand h1, html.opening .head-actions, html.opening .syncbar { animation: mlUp .45s ease-out both; }
+  html.opening .rise { animation: mlUp .5s cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * 60ms + 160ms); }
+  @keyframes mlDraw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes mlUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { html.opening * { animation: none !important; } }
   #syncStatus { margin-right: auto; }
   .syncbar { max-width: 640px; margin: 6px auto 0; display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
   .syncdot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
@@ -350,7 +380,7 @@
   .export-hint b { color: var(--accent); font-weight: 600; }
   .voucher-btn { width: 100%; margin-top: 10px; }
   .voucher-btn:disabled { opacity: .45; }
-  .voucher-btn.alt { background: var(--accent); color: #fff; border: none; }
+  .voucher-btn.alt { background: var(--accent); color: var(--on-accent); border: none; }
   .voucher-btn.alt:disabled { background: var(--surface); color: var(--muted); border: 1px solid var(--line); }
 
   /* ---------- Voucher preview modal ---------- */
@@ -463,6 +493,16 @@
     border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
   }
 </style>
+<script>
+  // Apply the saved theme before first paint, and start the opening animation.
+  try {
+    var _css = localStorage.getItem("matter-ledger-theme-css");
+    if (_css) { var _s = document.createElement("style"); _s.id = "themeStyle"; _s.textContent = _css; document.head.appendChild(_s); }
+    var _m = localStorage.getItem("matter-ledger-mode");
+    if (_m === "light" || _m === "dark") document.documentElement.setAttribute("data-theme", _m);
+  } catch (e) { }
+  if (!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)) document.documentElement.classList.add("opening");
+</script>
 </head>
 <body>
   <header>
@@ -471,12 +511,17 @@
         <span class="rule"></span>
         <h1>Matter Ledger</h1>
       </div>
+      <div class="head-actions">
+      <button class="theme-btn" id="themeBtn" aria-label="Choose theme" title="Theme">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3a9 9 0 100 18c1 0 1.6-.8 1.6-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 005-5c0-4-4-7.2-9-7.2z"/><circle cx="7.5" cy="11" r="1.2" fill="currentColor"/><circle cx="10" cy="7" r="1.2" fill="currentColor"/><circle cx="15" cy="7" r="1.2" fill="currentColor"/></svg>
+      </button>
       <div class="cur-pos">
         <button class="cur-btn" id="curBtn" aria-label="Change currency">
           <span id="curLabel">₹ INR</span>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="cur-menu" id="curMenu"></div>
+      </div>
       </div>
     </div>
     <div class="syncbar">
@@ -486,6 +531,28 @@
       <button class="linkish" id="authAction">Sign in with Google</button>
     </div>
   </header>
+
+  <div class="scrim" id="themeScrim"></div>
+  <div class="sheet" id="themeSheet" role="dialog" aria-modal="true" aria-labelledby="themeTitle">
+    <div class="sheet-grab"></div>
+    <div class="sheet-head">
+      <h2 id="themeTitle">Theme</h2>
+      <button class="icon-btn" id="themeClose" aria-label="Close">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="sheet-body">
+      <div class="theme-seg" role="group" aria-label="Light or dark">
+        <button type="button" data-mode="auto">Auto</button>
+        <button type="button" data-mode="light">Light</button>
+        <button type="button" data-mode="dark">Dark</button>
+      </div>
+      <div id="themeList"></div>
+    </div>
+    <div class="sheet-foot">
+      <button class="btn-primary" id="themeDone">Done</button>
+    </div>
+  </div>
 
   <div class="scrim" id="profScrim"></div>
   <div class="sheet" id="profSheet" role="dialog" aria-modal="true">
@@ -530,7 +597,7 @@
 
   <div class="wrap">
     <!-- Summary -->
-    <section class="summary">
+    <section class="rise summary" style="--i:0">
       <div class="summary-top">
         <div>
           <div class="label">Total expenditure</div>
@@ -554,35 +621,35 @@
     </section>
 
     <!-- Toolbar -->
-    <div class="toolbar">
+    <div class="rise toolbar" style="--i:1">
       <div class="search">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
         <input type="text" id="search" placeholder="Search client, partner, expenditure…" autocomplete="off">
       </div>
     </div>
-    <div class="rangebar">
+    <div class="rise rangebar" style="--i:2">
       <input type="date" id="viewFrom" class="mono" aria-label="From date">
       <span class="range-arrow">to</span>
       <input type="date" id="viewTo" class="mono" aria-label="To date">
     </div>
-    <div class="filterbar">
+    <div class="rise filterbar" style="--i:3">
       <select id="filterPartner" class="filter-select partner-select" aria-label="Filter by partner"></select>
     </div>
-    <div class="filterbar">
+    <div class="rise filterbar" style="--i:4">
       <select id="filterPaid" class="filter-select" aria-label="Filter by who paid"></select>
       <select id="filterClient" class="filter-select" aria-label="Filter by client"></select>
       <button class="linkish" id="filterReset">Reset</button>
     </div>
-    <button class="btn-primary voucher-btn" id="previewBtn" disabled>
+    <button class="rise btn-primary voucher-btn" id="previewBtn" style="--i:5" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
       Preview voucher
     </button>
-    <div class="export-hint" id="exportHint">Covering: <b>all expenses</b></div>
-    <button class="btn-primary voucher-btn alt" id="exportDocx" disabled>
+    <div class="rise export-hint" id="exportHint" style="--i:6">Covering: <b>all expenses</b></div>
+    <button class="rise btn-primary voucher-btn alt" id="exportDocx" style="--i:7" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a1 1 0 01-1 1H7a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M13 3v6h6"/></svg>
       Word voucher (firm format)
     </button>
-    <div class="export-row">
+    <div class="rise export-row" style="--i:8">
       <button class="btn ghost" id="exportPdf" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h7l5 5v13a0 0 0 01 0 0H7a2 2 0 01-2-2V5a2 2 0 012-2z"/><path d="M13 3v6h6"/><rect x="8" y="13" width="8" height="6" rx="1"/></svg>
         PDF
@@ -593,7 +660,7 @@
       </button>
     </div>
 
-    <div class="data-row">
+    <div class="rise data-row" style="--i:9">
       <span class="data-note" id="dataNote">Spare copy:</span>
       <button class="linkish" id="backupBtn">Back up</button>
       <span class="data-sep">·</span>
@@ -601,7 +668,7 @@
       <input type="file" id="restoreFile" accept="application/json,.json" hidden>
     </div>
 
-    <div class="list-head">
+    <div class="rise list-head" style="--i:10">
       <h2 id="listTitle">Entries</h2>
       <span class="hint" id="listHint"></span>
     </div>
@@ -610,7 +677,7 @@
   </div>
 
   <!-- Add bar -->
-  <div class="addbar">
+  <div class="rise addbar" style="--i:4">
     <div class="inner">
       <button class="btn-primary" id="addBtn">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
@@ -774,7 +841,7 @@
   /* ---------- data document <-> state ---------- */
   function docFromState() {
     return {
-      version: 3, currency: state.currency, cats: state.cats, profile: state.profile,
+      version: 3, currency: state.currency, cats: state.cats, profile: state.profile, theme: state.theme,
       entries: state.entries.map(function (e) {
         return { id: e.id, date: e.date, desc: e.desc, amount: e.amount, advance: e.advance,
           client: e.client, partner: e.partner, paidBy: e.paidBy, imgId: e.imgId || null,
@@ -788,6 +855,7 @@
     if (Array.isArray(doc.cats) && doc.cats.length) state.cats = doc.cats;
     if (Array.isArray(doc.entries)) state.entries = doc.entries;
     if (doc.profile && doc.profile.name) state.profile = doc.profile;
+    if (doc.theme && doc.theme.pal) { state.theme = doc.theme; applyTheme(state.theme); }
   }
 
   /* ---------- local cache (instant load + offline view of text) ---------- */
@@ -1245,6 +1313,7 @@
     var all = state.entries;
     var totAmt = all.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
     var totAdv = all.reduce(function (s, e) { return s + (Number(e.advance) || 0); }, 0);
+    renderSeq++;
     $("sumAmount").textContent = fmt(totAmt);
     $("sumAdvance").textContent = fmt(totAdv);
     $("sumBalance").textContent = fmt(totAmt - totAdv);
@@ -1293,7 +1362,8 @@
       return;
     }
 
-    ledgerEl.innerHTML = rows.map(function (e) {
+    var opening = document.documentElement.classList.contains("opening");
+    ledgerEl.innerHTML = rows.map(function (e, ix) {
       var meta = "";
       if (e.client) meta += '<span class="chip client"><span class="dot"></span>' + esc(e.client) + '</span>';
       meta += '<span class="chip ptn" title="' + esc(e.partner || DEFAULT_PARTNER) + '">' + esc(partnerInfo(e.partner || DEFAULT_PARTNER).initials) + '</span>';
@@ -1302,7 +1372,8 @@
       meta += '<span class="entry-date mono">' + esc(fmtDate(e.date)) + '</span>';
       var adv = (Number(e.advance) || 0) > 0 ? '<div class="adv mono">adv ' + esc(fmt(e.advance)) + '</div>' : '';
       var thumb = "";
-      return '<div class="entry" data-id="' + e.id + '">' +
+      var riseAttr = (opening && ix < 6) ? ' rise" style="--i:' + (11 + ix) : '';
+      return '<div class="entry' + riseAttr + '" data-id="' + e.id + '">' +
         '<div class="entry-top">' +
           '<div class="entry-left">' + thumb + '<div class="entry-desc">' + esc(e.desc || "—") + '</div></div>' +
           '<div class="entry-amt"><div class="a mono">' + esc(fmt(e.amount)) + '</div>' + adv + '</div>' +
@@ -2196,12 +2267,153 @@
     clearTimeout(toastT); toastT = setTimeout(function () { t.classList.remove("show"); }, 2200);
   }
 
+  var THEMES = [
+    { id: "harbor", name: "Harbor Blue & Mist", group: "Calm & cool", tag: "Clearest", note: "Serene and airy. A softer, lighter blue than navy, still trustworthy, with a cooler, cleaner background.",
+      light: { bg: "#E8EDF0", surface: "#FAFCFD", ink: "#1B2733", muted: "#5A6977", line: "#D5DEE5", accent: "#2F6690", soft: "#DCE8F2", gold: "#A8743A", goldSoft: "#F1E5D6", on: "#FFFFFF" },
+      dark:  { bg: "#0F161C", surface: "#16202A", ink: "#E5ECF2", muted: "#93A3B2", line: "#26333F", accent: "#7DB3DC", soft: "#17304A", gold: "#D9A86C", goldSoft: "#2E2416", on: "#0B1824" } },
+    { id: "slate", name: "Slate & Sky", group: "Calm & cool", tag: "Modern", note: "Crisp and uncluttered. Cool greys with a bright sky-blue accent, like a modern banking app.",
+      light: { bg: "#E9EBEE", surface: "#FCFCFD", ink: "#1E242B", muted: "#5F6873", line: "#D9DDE2", accent: "#2F6FAE", soft: "#DDE9F5", gold: "#A0743C", goldSoft: "#F1E6D6", on: "#FFFFFF" },
+      dark:  { bg: "#121519", surface: "#191D22", ink: "#E6E9ED", muted: "#98A1AC", line: "#2A2F36", accent: "#7FB2E5", soft: "#18304A", gold: "#D6AA70", goldSoft: "#2D2518", on: "#0A1626" } },
+    { id: "indigo", name: "Ocean Indigo & Pearl", group: "Calm & cool", tag: "Focused", note: "Deep and steady. Indigo helps the eye settle and concentrate, on a pearly background.",
+      light: { bg: "#E8E9EF", surface: "#FBFBFD", ink: "#1C1F33", muted: "#5D6178", line: "#D7D9E4", accent: "#3B4A8C", soft: "#DFE3F3", gold: "#A27A3A", goldSoft: "#F0E7D4", on: "#FFFFFF" },
+      dark:  { bg: "#11131D", surface: "#181B28", ink: "#E7E8F1", muted: "#9A9EB6", line: "#282C3E", accent: "#8E9CE0", soft: "#1F2546", gold: "#D8B26E", goldSoft: "#2D2717", on: "#0E1126" } },
+    { id: "lavender", name: "Lavender Mist", group: "Calm & cool", tag: "Soothing", note: "Soft and gentle. Lavender is one of the most relaxing hues, kept muted so it stays professional.",
+      light: { bg: "#ECEAF1", surface: "#FCFBFE", ink: "#221F30", muted: "#635F76", line: "#DDDAE7", accent: "#5E55A0", soft: "#E6E3F6", gold: "#A57E45", goldSoft: "#F1E7D6", on: "#FFFFFF" },
+      dark:  { bg: "#14131B", surface: "#1B1A25", ink: "#EAE8F2", muted: "#A19DB6", line: "#2C2A3B", accent: "#ADA5EC", soft: "#272448", gold: "#D8B27A", goldSoft: "#2E2719", on: "#15122E" } },
+    { id: "teal", name: "Deep Teal & Stone", group: "Calm & cool", tag: "Fresh", note: "Grounded and fresh. Teal sits between calming blue and balancing green, on a neutral stone background.",
+      light: { bg: "#E6E9E7", surface: "#FAFBFA", ink: "#18262A", muted: "#57676B", line: "#D3DAD8", accent: "#1D5E66", soft: "#D7E9EA", gold: "#A9853A", goldSoft: "#EFE7D2", on: "#FFFFFF" },
+      dark:  { bg: "#0E1617", surface: "#152022", ink: "#E3EEEE", muted: "#92A7A9", line: "#243436", accent: "#6FB9BC", soft: "#143235", gold: "#D9B56E", goldSoft: "#2C2717", on: "#071718" } },
+    { id: "sage", name: "Sage & Sand", group: "Fresh & natural", tag: "Most restful", note: "Calm and balanced. Muted greens are widely felt as restful and stay comfortable to look at for long stretches.",
+      light: { bg: "#ECE9E1", surface: "#FBFAF6", ink: "#1F2A24", muted: "#5E6B63", line: "#DCD8CC", accent: "#3F6B55", soft: "#DCE9E1", gold: "#A0784A", goldSoft: "#F0E6D8", on: "#FFFFFF" },
+      dark:  { bg: "#121714", surface: "#19201C", ink: "#E6ECE8", muted: "#9AA89F", line: "#2A342E", accent: "#7DB89A", soft: "#1B3328", gold: "#D3AE7E", goldSoft: "#2E2619", on: "#0D1A13" } },
+    { id: "forest", name: "Forest & Ivory", group: "Fresh & natural", tag: "Rich", note: "Deep green with brass, like an old law library. Calm, but with more presence than sage.",
+      light: { bg: "#E9E9E1", surface: "#FBFBF7", ink: "#1C2620", muted: "#5D675F", line: "#D9DBCF", accent: "#2E5339", soft: "#DCE8DF", gold: "#A47E3B", goldSoft: "#F0E7D3", on: "#FFFFFF" },
+      dark:  { bg: "#101511", surface: "#171E19", ink: "#E5ECE7", muted: "#97A59B", line: "#27312A", accent: "#79B08A", soft: "#1A2F21", gold: "#D6B06C", goldSoft: "#2C2617", on: "#0B160E" } },
+    { id: "olive", name: "Olive & Linen", group: "Fresh & natural", tag: "Earthy", note: "Organic and understated. Olive and warm linen feel natural and unhurried.",
+      light: { bg: "#ECEAE0", surface: "#FBFAF5", ink: "#23251B", muted: "#64675A", line: "#DCDACB", accent: "#59652F", soft: "#E5EAD6", gold: "#A3733A", goldSoft: "#F1E5D3", on: "#FFFFFF" },
+      dark:  { bg: "#141510", surface: "#1B1D16", ink: "#E9EBE2", muted: "#A2A693", line: "#2D3024", accent: "#B3C27A", soft: "#2A3119", gold: "#D9AE72", goldSoft: "#2E2618", on: "#161A08" } },
+    { id: "mocha", name: "Mocha & Cream", group: "Warm & cozy", tag: "Cozy", note: "Warm and comforting, like a coffee-coloured leather notebook. Friendly without being loud.",
+      light: { bg: "#EDE7DF", surface: "#FCF9F5", ink: "#2A211B", muted: "#6E6258", line: "#E0D6CA", accent: "#6B4A35", soft: "#EEE2D7", gold: "#A67C2E", goldSoft: "#F2E7CF", on: "#FFFFFF" },
+      dark:  { bg: "#17120F", surface: "#1F1915", ink: "#EEE6DF", muted: "#AA9B8E", line: "#352B24", accent: "#D2A887", soft: "#33261C", gold: "#DDB46A", goldSoft: "#2F2716", on: "#1C120B" } },
+    { id: "rose", name: "Dusty Rose & Stone", group: "Warm & cozy", tag: "Friendly", note: "Soft and welcoming. A muted rose feels warm and approachable while staying grown-up.",
+      light: { bg: "#EEE8E6", surface: "#FDFAF9", ink: "#2A2023", muted: "#6F6064", line: "#E2D7D6", accent: "#9A4E62", soft: "#F4E1E6", gold: "#A47B3F", goldSoft: "#F2E7D4", on: "#FFFFFF" },
+      dark:  { bg: "#181214", surface: "#211A1C", ink: "#F0E7E9", muted: "#AE9DA1", line: "#382C2F", accent: "#E59BAE", soft: "#3C2229", gold: "#D9B26E", goldSoft: "#2E2617", on: "#2A0D16" } },
+    { id: "plum", name: "Plum & Linen", group: "Warm & cozy", tag: "Elegant", note: "Quietly sophisticated. A muted plum feels considered and calm without being cold, with gold accents.",
+      light: { bg: "#ECE7E6", surface: "#FCFAF9", ink: "#261E2A", muted: "#6A5F6C", line: "#DED6D5", accent: "#5E3F6B", soft: "#EAE0EE", gold: "#A27B3F", goldSoft: "#F0E6D3", on: "#FFFFFF" },
+      dark:  { bg: "#161219", surface: "#1E1822", ink: "#EDE7EF", muted: "#A698AA", line: "#33293A", accent: "#C49BD6", soft: "#2F2238", gold: "#D8B26E", goldSoft: "#2E2617", on: "#1A1020" } },
+    { id: "navy", name: "Navy & Brass", group: "Classic & formal", tag: "Current", note: "Formal and trustworthy, with a law-firm feel. Deep blue signals reliability; brass adds warmth.",
+      light: { bg: "#E7E4DB", surface: "#FCFBF7", ink: "#1A2334", muted: "#5B6472", line: "#DBD7CB", accent: "#21406E", soft: "#DBE4F1", gold: "#9A7526", goldSoft: "#EFE6CF", on: "#FFFFFF" },
+      dark:  { bg: "#10141C", surface: "#171D28", ink: "#E8EBF0", muted: "#98A1B0", line: "#28303E", accent: "#6F9BD8", soft: "#182A42", gold: "#D8B46A", goldSoft: "#2B2616", on: "#0B1220" } },
+    { id: "burgundy", name: "Burgundy & Parchment", group: "Classic & formal", tag: "Traditional", note: "Rich and established. Burgundy with gold on parchment, like a bound legal volume.",
+      light: { bg: "#EDE6DF", surface: "#FCF9F6", ink: "#2A1D1F", muted: "#6E5E60", line: "#E0D5CF", accent: "#7A2E3A", soft: "#F1DEE0", gold: "#A47A34", goldSoft: "#F1E6D0", on: "#FFFFFF" },
+      dark:  { bg: "#171112", surface: "#20181A", ink: "#EFE6E7", muted: "#AB9A9C", line: "#362A2C", accent: "#E0919C", soft: "#3A1F24", gold: "#D9B26C", goldSoft: "#2E2616", on: "#24090E" } },
+    { id: "charcoal", name: "Charcoal & Gold", group: "Classic & formal", tag: "Premium", note: "Minimal and premium. Near-black with gold accents; the dark version is especially striking.",
+      light: { bg: "#E9E8E5", surface: "#FCFCFB", ink: "#1C1D20", muted: "#62646A", line: "#DAD9D5", accent: "#2F3238", soft: "#E5E5E7", gold: "#A88330", goldSoft: "#F2E8CF", on: "#FFFFFF" },
+      dark:  { bg: "#121214", surface: "#1A1A1D", ink: "#ECECEE", muted: "#9E9FA6", line: "#2C2C31", accent: "#E2C27A", soft: "#2E2A1E", gold: "#E2C27A", goldSoft: "#2E2A1E", on: "#19160C" } }
+  ];
+
+  /* ---------- themes: each person's choice, saved on the phone and in their Drive ---------- */
+  var LS_THEME_CSS = "matter-ledger-theme-css", LS_MODE = "matter-ledger-mode", LS_THEME = "matter-ledger-theme";
+  state.theme = (function () { try { return JSON.parse(localStorage.getItem(LS_THEME)) || null; } catch (e) { return null; } })() || { pal: "navy", mode: "auto" };
+  var renderSeq = 0;
+
+  function hexMix(a, b, t) {
+    var pa = [1, 3, 5].map(function (i) { return parseInt(a.slice(i, i + 2), 16); });
+    var pb = [1, 3, 5].map(function (i) { return parseInt(b.slice(i, i + 2), 16); });
+    return "#" + pa.map(function (v, i) { return ("0" + Math.round(v + (pb[i] - v) * t).toString(16)).slice(-2); }).join("");
+  }
+  function themeVars(c) {
+    return "--bg:" + c.bg + ";--surface:" + c.surface + ";--surface-2:" + hexMix(c.surface, c.bg, .55) +
+      ";--ink:" + c.ink + ";--muted:" + c.muted + ";--faint:" + hexMix(c.muted, c.bg, .35) +
+      ";--line:" + c.line + ";--line-strong:" + hexMix(c.line, c.ink, .14) +
+      ";--accent:" + c.accent + ";--accent-soft:" + c.soft + ";--advance:" + c.gold + ";--advance-soft:" + c.goldSoft +
+      ";--on-accent:" + c.on + ";";
+  }
+  function themeCSS(pal) {
+    var p = THEMES.filter(function (x) { return x.id === pal; })[0] || THEMES[0];
+    var dark = themeVars(p.dark) + "color-scheme:dark;";
+    return ":root{" + themeVars(p.light) + "}" +
+      "@media (prefers-color-scheme: dark){:root:not([data-theme=\"light\"]){" + dark + "}}" +
+      ":root[data-theme=\"dark\"]{" + dark + "}";
+  }
+  function applyTheme(t) {
+    t = t || { pal: "navy", mode: "auto" };
+    var css = themeCSS(t.pal), el = document.getElementById("themeStyle");
+    if (!el) { el = document.createElement("style"); el.id = "themeStyle"; document.head.appendChild(el); }
+    el.textContent = css;
+    if (t.mode === "light" || t.mode === "dark") document.documentElement.setAttribute("data-theme", t.mode);
+    else document.documentElement.removeAttribute("data-theme");
+    try {
+      localStorage.setItem(LS_THEME_CSS, css); localStorage.setItem(LS_MODE, t.mode || "auto");
+      localStorage.setItem(LS_THEME, JSON.stringify(t));
+    } catch (e) { }
+  }
+  function renderThemePicker() {
+    var groups = [];
+    THEMES.forEach(function (p) { if (groups.indexOf(p.group) === -1) groups.push(p.group); });
+    $("themeList").innerHTML = groups.map(function (g) {
+      return '<div class="theme-group">' + esc(g) + '</div><div class="theme-grid">' +
+        THEMES.filter(function (p) { return p.group === g; }).map(function (p) {
+          var c = p.light;
+          return '<button type="button" class="theme-tile" data-pal="' + p.id + '" aria-pressed="' + (state.theme.pal === p.id) + '">' +
+            '<span class="theme-sw" aria-hidden="true"><span style="background:' + c.accent + '"></span><span style="background:' + c.gold + '"></span><span style="background:' + c.bg + '"></span><span style="background:' + p.dark.bg + '"></span></span>' +
+            '<span class="theme-name">' + esc(p.name) + (p.id === "navy" ? " (original)" : "") + '</span></button>';
+        }).join("") + '</div>';
+    }).join("");
+    document.querySelectorAll(".theme-seg button").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-mode") === (state.theme.mode || "auto")));
+    });
+  }
+  function setTheme(change) {
+    state.theme = { pal: change.pal || state.theme.pal, mode: change.mode || state.theme.mode || "auto" };
+    applyTheme(state.theme);
+    renderThemePicker();
+    if (drive.signedIn) scheduleSave(); else writeCache();
+  }
+  function openTheme() {
+    renderThemePicker();
+    $("themeScrim").classList.add("open"); $("themeSheet").classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+  function closeTheme() {
+    $("themeScrim").classList.remove("open"); $("themeSheet").classList.remove("open");
+    document.body.style.overflow = "";
+  }
+  $("themeBtn").addEventListener("click", openTheme);
+  $("themeClose").addEventListener("click", closeTheme);
+  $("themeScrim").addEventListener("click", closeTheme);
+  $("themeDone").addEventListener("click", closeTheme);
+  $("themeList").addEventListener("click", function (ev) {
+    var b = ev.target.closest(".theme-tile"); if (b) setTheme({ pal: b.getAttribute("data-pal") });
+  });
+  document.querySelector(".theme-seg").addEventListener("click", function (ev) {
+    var b = ev.target.closest("button[data-mode]"); if (b) setTheme({ mode: b.getAttribute("data-mode") });
+  });
+
+  /* ---------- Ledger rise: count the total up once on open ---------- */
+  function openingCountUp() {
+    if (!document.documentElement.classList.contains("opening")) return;
+    var seq = renderSeq, el = $("sumAmount"), t0 = null, dur = 900;
+    var end = state.entries.reduce(function (s, e) { return s + (Number(e.amount) || 0); }, 0);
+    function step(t) {
+      if (seq !== renderSeq) return;            // data refreshed: show the real figure
+      if (!t0) t0 = t;
+      var k = Math.min(1, (t - t0) / dur);
+      el.textContent = fmt(end * (1 - Math.pow(1 - k, 3)));
+      if (k < 1) requestAnimationFrame(step);
+    }
+    if (end > 0) requestAnimationFrame(step);
+  }
+
   /* ---------- init ---------- */
+  applyTheme(state.theme);
   load();
   buildCurMenu();
   applyCurrency();
   render();
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeSheet(); });
+  openingCountUp();
+  setTimeout(function () { document.documentElement.classList.remove("opening"); }, 1700);
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape") { closeSheet(); closeTheme(); } });
 
   // auth buttons
   $("authAction").addEventListener("click", function () { drive.signedIn ? signOut() : signIn(); });
